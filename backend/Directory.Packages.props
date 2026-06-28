@@ -1,0 +1,50 @@
+<Project>
+
+  <!-- Central Package Management: one source of truth for every package version
+       across the 7 projects (avoids EF/Npgsql version drift). -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Application-layer abstractions (DI + logging) — no framework runtime, just contracts -->
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.1" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.1" />
+    <!-- Infrastructure composition (typed HttpClient + options/config binding + hosted service) -->
+    <PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.1" />
+    <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.1" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.1" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.1" />
+    <!-- Persistence -->
+    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.9" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.9" />
+    <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.2" />
+    <!-- Scheduling -->
+    <PackageVersion Include="Cronos" Version="0.13.0" />
+    <!-- CV extraction + fuzzy skill matching. Pinned EXACT (research §4: PdfPig is pre/peri-1.0).
+         1.7.0-custom-5 is the only self-consistent build on the feed (its sub-packages — Core,
+         Fonts, Tokens — exist only at this version); the 0.1.9-alpha main package's sub-deps are
+         missing, which would force a broken version mix. -->
+    <PackageVersion Include="UglyToad.PdfPig" Version="[1.7.0-custom-5]" />
+    <PackageVersion Include="UglyToad.PdfPig.DocumentLayoutAnalysis" Version="[1.7.0-custom-5]" />
+    <PackageVersion Include="FuzzySharp" Version="2.0.2" />
+    <!-- Polite HTTP retry/backoff -->
+    <PackageVersion Include="Polly" Version="8.7.0" />
+    <!-- HTML sanitization of source-supplied offer descriptions (XSS defense, FR/Principle IV) -->
+    <PackageVersion Include="HtmlSanitizer" Version="9.0.892" />
+    <!-- Referenced only; manual-login adapter deferred -->
+    <PackageVersion Include="Microsoft.Playwright" Version="1.61.0" />
+    <!-- Web host: dev-time SPA proxy -->
+    <PackageVersion Include="Microsoft.AspNetCore.SpaProxy" Version="10.0.9" />
+    <!-- Test stack -->
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageVersion Include="xunit" Version="2.9.3" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.4" />
+    <PackageVersion Include="coverlet.collector" Version="6.0.4" />
+    <PackageVersion Include="Shouldly" Version="4.3.0" />
+    <PackageVersion Include="Testcontainers.PostgreSql" Version="4.12.0" />
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.9" />
+    <PackageVersion Include="Microsoft.Extensions.TimeProvider.Testing" Version="9.10.0" />
+  </ItemGroup>
+
+</Project>

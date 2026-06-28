@@ -1,0 +1,88 @@
+/* Settings page. All values reference design tokens (Principle VIII). */
+
+.settings-page {
+  max-width: 640px;
+}
+
+.settings-card {
+  padding: var(--sp-5);
+  margin-bottom: var(--sp-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.weights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: var(--sp-3);
+}
+
+.weights-total {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+}
+.weights-total--ok {
+  color: var(--c-success);
+}
+.weights-total--bad {
+  color: var(--c-danger);
+}
+.settings-card__title {
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+}
+
+.settings-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  color: var(--c-ink-700);
+}
+.settings-field input {
+  font: inherit;
+  font-size: var(--fs-base);
+  font-weight: var(--fw-regular);
+  padding: var(--sp-2) var(--sp-3);
+  border: 1px solid var(--c-paper-300);
+  border-radius: var(--radius-md);
+  background: var(--c-paper-0);
+  color: var(--c-ink-900);
+}
+.settings-field input:focus {
+  outline: 2px solid var(--c-brand-100);
+  border-color: var(--c-brand-500);
+}
+
+.settings-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  color: var(--c-ink-700);
+}
+
+.settings-msg {
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--radius-md);
+  font-size: var(--fs-sm);
+}
+.settings-msg--error {
+  background: var(--c-danger-bg);
+  color: var(--c-danger);
+}
+.settings-msg--ok {
+  background: var(--c-interested-bg);
+  color: var(--c-interested-fg);
+}
+
+.settings-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+.settings-note {
+  margin-top: var(--sp-4);
+}

@@ -1,0 +1,80 @@
+/* App shell layout. All values reference design tokens (Principle VIII). */
+
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--c-paper-0);
+  border-bottom: 1px solid var(--c-paper-200);
+  box-shadow: var(--shadow-sm);
+}
+
+.app-header__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-5);
+  height: 60px;
+}
+
+.app-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-lg);
+  color: var(--c-ink-900);
+}
+.app-brand__mark {
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, var(--c-brand-600), var(--c-accent-600));
+}
+
+.app-nav {
+  display: flex;
+  gap: var(--sp-1);
+}
+.app-nav__link {
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--radius-md);
+  color: var(--c-ink-500);
+  font-weight: var(--fw-medium);
+  font-size: var(--fs-sm);
+  text-decoration: none;
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
+}
+.app-nav__link:hover {
+  background: var(--c-paper-100);
+  color: var(--c-ink-900);
+  text-decoration: none;
+}
+.app-nav__link--active {
+  background: var(--c-brand-100);
+  color: var(--c-brand-600);
+}
+
+.app-main {
+  flex: 1;
+  padding-top: var(--sp-6);
+  padding-bottom: var(--sp-8);
+}
+
+.page-title {
+  font-size: var(--fs-2xl);
+  font-weight: var(--fw-bold);
+  margin-bottom: var(--sp-2);
+}
+.page-subtitle {
+  color: var(--c-ink-500);
+  margin-bottom: var(--sp-5);
+}

@@ -1,0 +1,31 @@
+/* Scan history table. All values reference design tokens (Principle VIII). */
+
+.scan-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-sm);
+  background: var(--c-paper-0);
+  border: 1px solid var(--c-paper-200);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.scan-table th,
+.scan-table td {
+  text-align: left;
+  padding: var(--sp-2) var(--sp-3);
+  border-bottom: 1px solid var(--c-paper-100);
+}
+.scan-table th {
+  background: var(--c-paper-50);
+  color: var(--c-ink-500);
+  font-weight: var(--fw-semibold);
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.scan-table tbody tr:last-child td {
+  border-bottom: none;
+}
+.scan-table tbody tr:hover {
+  background: var(--c-paper-50);
+}

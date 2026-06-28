@@ -1,0 +1,95 @@
+/* Sources management page. All values reference design tokens (Principle VIII). */
+
+.sources-page {
+  max-width: 720px;
+}
+
+.sources-page__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-5);
+}
+
+.sources-form {
+  padding: var(--sp-5);
+  margin-bottom: var(--sp-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+.sources-form__row {
+  display: flex;
+  gap: var(--sp-4);
+}
+.sources-form__row .settings-field {
+  flex: 1;
+}
+.sources-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sp-2);
+}
+
+.sources-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.source-item {
+  padding: var(--sp-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+.source-item__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--sp-3);
+}
+.source-item__name {
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+  color: var(--c-ink-900);
+}
+.source-item__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+  margin-top: var(--sp-2);
+}
+.source-item__actions {
+  display: flex;
+  gap: var(--sp-2);
+  flex-shrink: 0;
+}
+
+.source-criteria {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--sp-2) var(--sp-4);
+}
+.source-criteria__row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.source-criteria dt {
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--c-ink-400);
+  font-weight: var(--fw-semibold);
+}
+.source-criteria dd {
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--c-ink-900);
+}

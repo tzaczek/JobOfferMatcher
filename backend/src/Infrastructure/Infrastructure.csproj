@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Application\Application.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Editable skill catalog ships next to the app and is loaded at startup. -->
+    <None Update="Cv\skill-catalog.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Persistence -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <!-- Scheduling -->
+    <PackageReference Include="Cronos" />
+    <!-- CV extraction + fuzzy skill matching. PdfPig pinned exact in Directory.Packages.props. -->
+    <PackageReference Include="UglyToad.PdfPig" />
+    <PackageReference Include="UglyToad.PdfPig.DocumentLayoutAnalysis" />
+    <PackageReference Include="FuzzySharp" />
+    <!-- Polite HTTP retry/backoff for source collection -->
+    <PackageReference Include="Polly" />
+    <!-- HTML sanitization of source-supplied offer descriptions (XSS defense) -->
+    <PackageReference Include="HtmlSanitizer" />
+    <!-- Composition: typed HttpClient + options/config binding + hosted service -->
+    <PackageReference Include="Microsoft.Extensions.Http" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+    <!-- Referenced only; the manual-login adapter is deferred (plan.md / research §2). -->
+    <PackageReference Include="Microsoft.Playwright" />
+  </ItemGroup>
+
+</Project>

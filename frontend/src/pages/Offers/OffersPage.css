@@ -1,0 +1,113 @@
+/* Offers feed page. All values reference design tokens (Principle VIII). */
+
+.offers-page__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-4);
+}
+
+.offers-page__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-5);
+  flex-wrap: wrap;
+}
+
+.segmented {
+  display: inline-flex;
+  background: var(--c-paper-100);
+  border-radius: var(--radius-md);
+  padding: 3px;
+}
+.segmented__btn {
+  font: inherit;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  border: none;
+  background: transparent;
+  color: var(--c-ink-500);
+  padding: var(--sp-1) var(--sp-4);
+  border-radius: calc(var(--radius-md) - 3px);
+  cursor: pointer;
+}
+.segmented__btn--active {
+  background: var(--c-paper-0);
+  color: var(--c-ink-900);
+  box-shadow: var(--shadow-sm);
+}
+
+.offers-page__header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.offers-page__export {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.offers-page__export-label {
+  font-weight: var(--fw-medium);
+}
+
+.offers-page__controls {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+.offers-page__select {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--fs-sm);
+  color: var(--c-ink-500);
+}
+.offers-page__select select {
+  font: inherit;
+  font-size: var(--fs-sm);
+  padding: var(--sp-1) var(--sp-2);
+  border: 1px solid var(--c-paper-300);
+  border-radius: var(--radius-sm);
+  background: var(--c-paper-0);
+  color: var(--c-ink-900);
+}
+
+.offers-page__feed {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.scan-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--radius-md);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  margin-bottom: var(--sp-4);
+}
+.scan-banner--running {
+  background: var(--c-brand-100);
+  color: var(--c-brand-600);
+}
+.scan-banner--ok {
+  background: var(--c-interested-bg);
+  color: var(--c-interested-fg);
+}
+.scan-banner--warn {
+  background: var(--c-updated-bg);
+  color: var(--c-updated-fg);
+}
+.scan-banner--error {
+  background: var(--c-danger-bg);
+  color: var(--c-danger);
+}

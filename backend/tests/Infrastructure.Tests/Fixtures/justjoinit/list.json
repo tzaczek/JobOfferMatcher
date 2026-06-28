@@ -1,0 +1,89 @@
+{
+  "data": [
+    {
+      "guid": "11111111-aaaa-bbbb-cccc-000000000001",
+      "slug": "senior-dotnet-engineer-acme-krakow",
+      "title": "Senior .NET Engineer",
+      "companyName": "Acme Software",
+      "workplaceType": "remote",
+      "experienceLevel": "senior",
+      "requiredSkills": ["C#", ".NET", "Azure"],
+      "niceToHaveSkills": ["Kubernetes"],
+      "employmentTypes": [
+        { "type": "b2b", "from": 18000, "to": 22000, "currency": "pln", "unit": "month", "gross": false, "fromPln": 18000, "toPln": 22000, "fromEur": 4186, "toEur": 5116 },
+        { "type": "permanent", "from": 15000, "to": 18000, "currency": "pln", "unit": "month", "gross": true, "fromPln": 15000, "toPln": 18000 }
+      ],
+      "multilocation": [{ "city": "Kraków", "slug": "krakow" }],
+      "publishedAt": "2026-06-20T08:00:00.000Z",
+      "lastPublishedAt": "2026-06-25T08:00:00.000Z",
+      "expiredAt": "2026-07-25T08:00:00.000Z",
+      "isSuperOffer": false,
+      "remote": true,
+      "countryCode": "PL"
+    },
+    {
+      "guid": "22222222-aaaa-bbbb-cccc-000000000002",
+      "slug": "dotnet-developer-bravo-warsaw",
+      "title": ".NET Developer",
+      "companyName": "Bravo Tech",
+      "workplaceType": "hybrid",
+      "experienceLevel": "mid",
+      "requiredSkills": [".NET", "SQL"],
+      "niceToHaveSkills": [],
+      "employmentTypes": [
+        { "type": "b2b", "from": 12000, "to": 16000, "currency": "pln", "unit": "month", "gross": false }
+      ],
+      "multilocation": [{ "city": "Warszawa", "slug": "warszawa" }],
+      "publishedAt": "2026-06-22T08:00:00.000Z",
+      "lastPublishedAt": "2026-06-22T08:00:00.000Z",
+      "expiredAt": null,
+      "isSuperOffer": false,
+      "remote": false,
+      "countryCode": "PL"
+    },
+    {
+      "guid": "33333333-aaaa-bbbb-cccc-000000000003",
+      "slug": "office-net-role-charlie",
+      "title": "Office .NET Role",
+      "companyName": "Charlie Corp",
+      "workplaceType": "office",
+      "experienceLevel": "mid",
+      "requiredSkills": [".NET"],
+      "niceToHaveSkills": [],
+      "employmentTypes": [
+        { "type": "permanent", "from": 10000, "to": 14000, "currency": "pln", "unit": "month", "gross": true }
+      ],
+      "multilocation": [{ "city": "Gdańsk", "slug": "gdansk" }],
+      "publishedAt": "2026-06-18T08:00:00.000Z",
+      "lastPublishedAt": "2026-06-18T08:00:00.000Z",
+      "expiredAt": null,
+      "isSuperOffer": false,
+      "remote": false,
+      "countryCode": "PL"
+    },
+    {
+      "guid": "44444444-aaaa-bbbb-cccc-000000000004",
+      "slug": "stealth-net-role-no-salary",
+      "title": "Stealth .NET Role",
+      "companyName": "Stealth Co",
+      "workplaceType": "remote",
+      "experienceLevel": "senior",
+      "requiredSkills": [],
+      "niceToHaveSkills": [],
+      "employmentTypes": [],
+      "multilocation": [{ "city": "Remote", "slug": "remote" }],
+      "publishedAt": "2026-06-24T08:00:00.000Z",
+      "lastPublishedAt": "2026-06-24T08:00:00.000Z",
+      "expiredAt": null,
+      "isSuperOffer": false,
+      "remote": true,
+      "countryCode": "PL"
+    }
+  ],
+  "meta": {
+    "from": 0,
+    "next": { "cursor": 20, "itemsCount": 4 },
+    "prev": null,
+    "totalItems": 4
+  }
+}

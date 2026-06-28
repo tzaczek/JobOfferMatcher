@@ -1,0 +1,32 @@
+# EditorConfig — shared code style for the Job Offer Matcher (backend + frontend).
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+
+[*.{cs,csx}]
+indent_size = 4
+# Namespaces, usings, and modern C# conventions
+csharp_style_namespace_declarations = file_scoped:warning
+csharp_using_directive_placement = outside_namespace:warning
+dotnet_sort_system_directives_first = true
+csharp_prefer_braces = true:suggestion
+csharp_style_var_when_type_is_apparent = true:suggestion
+dotnet_style_prefer_conditional_expression_over_return = false
+# Nullable / quality: surface the constitution's "async all the way" + analyzer signals
+dotnet_diagnostic.CA2007.severity = none      # ConfigureAwait not needed in app code
+dotnet_diagnostic.CA1848.severity = none      # LoggerMessage source-gen — overkill for a solo app
+dotnet_diagnostic.CA1515.severity = none      # public types in app assemblies are fine
+
+[*.{ts,tsx,js,jsx,json,css,html,yml,yaml}]
+indent_size = 2
+
+[*.{ps1,psm1}]
+indent_size = 4
+
+[*.md]
+trim_trailing_whitespace = false

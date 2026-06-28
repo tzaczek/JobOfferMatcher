@@ -1,0 +1,67 @@
+# ==========================================================================
+# Personal data & secrets — MUST stay local (Constitution Principle IV).
+# These lines protect real PII that already exists on disk (cv/*.pdf) and
+# must be in place BEFORE `git init` / first `git add`.
+# ==========================================================================
+# CVs and any personal documents
+cv/
+*.cv.pdf
+
+# Live database, dumps, and data exports
+*.db
+*.sqlite
+*.sqlite3
+/data/
+pgdata/
+exports/
+export/
+*.export.json
+*.export.csv
+
+# Secrets / local config
+.env
+.env.*
+!.env.example
+appsettings.*.local.json
+secrets.json
+
+# Playwright browser profiles / persisted auth sessions (session cookies = sensitive)
+browser-profiles/
+**/.auth/
+playwright/.auth/
+
+# ==========================================================================
+# .NET
+# ==========================================================================
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+*.user
+*.suo
+.vs/
+TestResults/
+*.trx
+# EF Core local tool cache is fine to ignore; migrations themselves are tracked
+artifacts/
+
+# ==========================================================================
+# Node / React / Vite frontend
+# ==========================================================================
+node_modules/
+frontend/dist/
+# The built SPA is emitted here for "run for real" — it is a build artifact.
+backend/src/Web/wwwroot/*
+!backend/src/Web/wwwroot/.gitkeep
+.vite/
+npm-debug.log*
+yarn-error.log*
+*.local
+
+# ==========================================================================
+# OS / editor
+# ==========================================================================
+.DS_Store
+Thumbs.db
+*.swp
+.idea/

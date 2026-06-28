@@ -1,0 +1,147 @@
+/* OfferCard — all values reference design tokens (Principle VIII). */
+
+.offer-card {
+  padding: var(--sp-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  transition: box-shadow var(--transition-base);
+}
+.offer-card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.offer-card__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--sp-3);
+}
+.offer-card__title {
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+  color: var(--c-ink-900);
+}
+.offer-card__company {
+  color: var(--c-ink-500);
+  font-size: var(--fs-sm);
+  margin-top: 2px;
+}
+.offer-card__badges {
+  display: flex;
+  gap: var(--sp-1);
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.offer-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1) var(--sp-3);
+  color: var(--c-ink-700);
+  font-size: var(--fs-sm);
+}
+.offer-card__meta > span {
+  position: relative;
+}
+.offer-card__meta > span:not(:last-child)::after {
+  content: '·';
+  position: absolute;
+  right: calc(var(--sp-3) / -2 - 1px);
+  color: var(--c-ink-300);
+}
+
+.offer-card__salary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+.offer-card__bands {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.offer-card__band {
+  font-weight: var(--fw-semibold);
+  color: var(--c-ink-900);
+}
+.offer-card__normalized {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.offer-card__fit {
+  display: flex;
+  gap: var(--sp-3);
+  align-items: flex-start;
+  padding: var(--sp-3);
+  background: var(--c-paper-50);
+  border-radius: var(--radius-md);
+}
+.offer-card__fit-score {
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-bold);
+  white-space: nowrap;
+}
+.offer-card__fit-max {
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  color: var(--c-ink-400);
+  margin-left: 2px;
+}
+.offer-card__fit-lists {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+.offer-card__chips,
+.offer-card__skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+}
+
+.offer-card__group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2) var(--sp-3);
+  padding: var(--sp-3);
+  background: var(--c-paper-50);
+  border-radius: var(--radius-md);
+  font-size: var(--fs-sm);
+}
+.offer-card__group-label {
+  color: var(--c-ink-500);
+  font-weight: var(--fw-medium);
+}
+.offer-card__group-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1) var(--sp-3);
+}
+.offer-card__group-link {
+  font-weight: var(--fw-medium);
+}
+.offer-card__group-split {
+  margin-left: auto;
+}
+
+.offer-card__actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-top: var(--sp-1);
+}
+.offer-card__status-actions {
+  display: flex;
+  gap: var(--sp-2);
+}

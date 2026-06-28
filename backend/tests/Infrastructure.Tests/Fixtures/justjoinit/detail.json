@@ -1,0 +1,19 @@
+{
+  "guid": "11111111-aaaa-bbbb-cccc-000000000001",
+  "slug": "senior-dotnet-engineer-acme-krakow",
+  "title": "Senior .NET Engineer",
+  "companyName": "Acme Software",
+  "body": "<p>We are looking for a <strong>Senior .NET Engineer</strong> to join our team.</p>",
+  "applyUrl": "https://example.test/apply/acme",
+  "companyUrl": "https://example.test/acme",
+  "languages": [{ "code": "en", "level": "B2" }],
+  "companySize": "100-200",
+  "category": { "id": 7, "name": ".NET", "key": "net" },
+  "isOfferActive": true,
+  "workplaceType": "remote",
+  "experienceLevel": "senior",
+  "requiredSkills": ["C#", ".NET", "Azure"],
+  "employmentTypes": [
+    { "type": "b2b", "from": 18000, "to": 22000, "currency": "pln", "unit": "month", "gross": false }
+  ]
+}

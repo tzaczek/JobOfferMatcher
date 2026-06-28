@@ -1,0 +1,18 @@
+<Project>
+
+  <!-- Common settings for every project in the JobOfferMatcher solution. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>JobOfferMatcher.$(MSBuildProjectName)</RootNamespace>
+    <AssemblyName>JobOfferMatcher.$(MSBuildProjectName)</AssemblyName>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <!-- Built-in .NET analyzers on for every project (constitution Quality Gates). -->
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+  </PropertyGroup>
+
+</Project>

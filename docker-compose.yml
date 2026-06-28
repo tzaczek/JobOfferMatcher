@@ -1,0 +1,25 @@
+# Local-first PostgreSQL for the Job Offer Matcher (research §5).
+# Pinned image + named volume; the password comes from a gitignored .env (Principle IV).
+# Start with: docker compose up -d db   (or via ./start.ps1)
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: jobs-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-jobs}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-jobs}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - jobs_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-jobs} -d ${POSTGRES_DB:-jobs}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  jobs_pgdata:
+    name: jobs_pgdata
