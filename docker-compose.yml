@@ -35,8 +35,14 @@ services:
     environment:
       # Talk to the db service over the compose network (internal port 5432).
       ConnectionStrings__AppDb: "Host=db;Port=5432;Database=${POSTGRES_DB:-jobs};Username=${POSTGRES_USER:-jobs};Password=${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}"
+      # The loopback-only PII APIs (/api/enrichment, /api/backup) can't see 127.0.0.1 in a container —
+      # host-published traffic arrives via the Docker bridge gateway. Trust private-network sources so
+      # those APIs work. SAFE ONLY because the port below is bound to the host loopback (127.0.0.1),
+      # so nothing off this machine can reach the app. Keep these two settings together (Principle IV).
+      Loopback__TrustPrivateNetwork: "true"
     ports:
-      - "${APP_PORT:-8080}:8080"
+      # Host loopback only — the app is single-user/local-first; never expose it on the LAN.
+      - "127.0.0.1:${APP_PORT:-8080}:8080"
     volumes:
       # Persist uploaded CVs across container rebuilds (gitignored on the host).
       - jobs_cvdata:/app/cv-data

@@ -32,16 +32,23 @@ internal static class EnrichmentEndpoints
     }
 }
 
-/// <summary>Rejects any non-loopback (or null/unknown remote-IP) request to the enrichment group with 403 (fail-closed).</summary>
-internal sealed class LoopbackOnlyFilter : IEndpointFilter
+/// <summary>
+/// Rejects any non-local (or null/unknown remote-IP) request to a loopback-only group with 403
+/// (fail-closed). Guards both <c>/api/enrichment/*</c> and <c>/api/backup/*</c>. When
+/// <c>Loopback:TrustPrivateNetwork</c> is set (container mode behind a host-loopback-bound port) it also
+/// admits the Docker-gateway source that host-published traffic arrives from (see <see cref="LoopbackGuard"/>).
+/// </summary>
+internal sealed class LoopbackOnlyFilter(IConfiguration configuration) : IEndpointFilter
 {
+    private readonly bool _trustPrivateNetwork = configuration.GetValue("Loopback:TrustPrivateNetwork", false);
+
     public async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
     {
         var remoteIp = context.HttpContext.Connection.RemoteIpAddress;
-        if (!LoopbackGuard.IsAllowed(remoteIp))
+        if (!LoopbackGuard.IsAllowed(remoteIp, _trustPrivateNetwork))
         {
             return Results.Json(
-                new { error = new { code = "LoopbackOnly", message = "The enrichment API is restricted to loopback." } },
+                new { error = new { code = "LoopbackOnly", message = "This API is restricted to the local machine." } },
                 statusCode: StatusCodes.Status403Forbidden);
         }
 
