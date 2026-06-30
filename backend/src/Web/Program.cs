@@ -10,6 +10,16 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
+// A backup restore (003) uploads the full DB + CV archive, which easily exceeds the default ~30 MB
+// Kestrel cap and the 128 MB multipart limit. This is a loopback-only, single-user local app, so raise
+// both generously. (/api/backup/* is still guarded by LoopbackOnlyFilter.)
+const long MaxUploadBytes = 4L * 1024 * 1024 * 1024; // 4 GB
+builder.WebHost.ConfigureKestrel(options => options.Limits.MaxRequestBodySize = MaxUploadBytes);
+builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = MaxUploadBytes;
+});
+
 // Application use cases + Infrastructure (EF Core, sources, scheduling).
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);

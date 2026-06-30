@@ -15,10 +15,15 @@ public sealed class ExportServiceTests
             Task.FromResult(rows);
     }
 
-    private static OfferExport Row(string title = "Senior .NET Engineer", string company = "Acme") => new(
+    private static OfferExport Row(
+        string title = "Senior .NET Engineer",
+        string company = "Acme",
+        bool applied = false,
+        DateTimeOffset? appliedAt = null,
+        string? note = null) => new(
         Guid.NewGuid(), "justjoin.it", title, company, "Kraków", "Remote", "b2b", "senior",
         ["C#", ".NET"], [], [new SalaryBandExport(18000, 22000, "PLN", "monthly", "b2b", "net")],
-        "https://justjoin.it/job/x", "available", "new", null,
+        "https://justjoin.it/job/x", "available", "new", applied, appliedAt, note, null,
         DateTimeOffset.UnixEpoch, DateTimeOffset.UnixEpoch, DateTimeOffset.UnixEpoch);
 
     private static ExportService Service(params OfferExport[] rows) => new(new FakeReader(rows));
@@ -52,5 +57,27 @@ public sealed class ExportServiceTests
         var csv = Encoding.UTF8.GetString((await Service(Row(title: "Engineer, Senior")).ExportAsync(ExportFormat.Csv)).Content);
 
         csv.ShouldContain("\"Engineer, Senior\"");
+    }
+
+    [Fact]
+    public async Task Export_includes_the_applied_flag_date_and_note()
+    {
+        var when = new DateTimeOffset(2026, 6, 29, 0, 0, 0, TimeSpan.Zero);
+        var row = Row(applied: true, appliedAt: when, note: "referred by Anna");
+
+        var csv = Encoding.UTF8.GetString((await Service(row).ExportAsync(ExportFormat.Csv)).Content);
+        csv.ShouldContain("applied,appliedAt,applicationNote"); // header columns present
+        csv.ShouldContain("true");
+        csv.ShouldContain("referred by Anna");
+
+        var json = Encoding.UTF8.GetString((await Service(row).ExportAsync(ExportFormat.Json)).Content);
+        json.ShouldContain("\"applied\": true");
+        json.ShouldContain("referred by Anna");
+
+        // A not-applied row serializes the flag as false with null date/note (default Row()).
+        var notAppliedJson = Encoding.UTF8.GetString((await Service(Row()).ExportAsync(ExportFormat.Json)).Content);
+        notAppliedJson.ShouldContain("\"applied\": false");
+        notAppliedJson.ShouldContain("\"appliedAt\": null");
+        notAppliedJson.ShouldContain("\"applicationNote\": null");
     }
 }

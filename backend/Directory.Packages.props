@@ -21,13 +21,13 @@
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.2" />
     <!-- Scheduling -->
     <PackageVersion Include="Cronos" Version="0.13.0" />
-    <!-- CV extraction + fuzzy skill matching. Pinned EXACT (research §4: PdfPig is pre/peri-1.0).
+    <!-- CV readability gauge + text fallback (research §4). Pinned EXACT (PdfPig is pre/peri-1.0).
+         FuzzySharp removed with the keyword profiler (ADR-2/FR-005) — no non-AI matching survives.
          1.7.0-custom-5 is the only self-consistent build on the feed (its sub-packages — Core,
          Fonts, Tokens — exist only at this version); the 0.1.9-alpha main package's sub-deps are
          missing, which would force a broken version mix. -->
     <PackageVersion Include="UglyToad.PdfPig" Version="[1.7.0-custom-5]" />
     <PackageVersion Include="UglyToad.PdfPig.DocumentLayoutAnalysis" Version="[1.7.0-custom-5]" />
-    <PackageVersion Include="FuzzySharp" Version="2.0.2" />
     <!-- Polite HTTP retry/backoff -->
     <PackageVersion Include="Polly" Version="8.7.0" />
     <!-- HTML sanitization of source-supplied offer descriptions (XSS defense, FR/Principle IV) -->

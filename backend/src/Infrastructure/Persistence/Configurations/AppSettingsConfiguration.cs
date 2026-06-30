@@ -17,5 +17,6 @@ internal sealed class AppSettingsConfiguration : IEntityTypeConfiguration<AppSet
         builder.Property(s => s.Normalization).HasColumnName("salary_norm").HasJsonbConversion<SalaryNormalizationSettings>();
         builder.Property(s => s.Weights).HasColumnName("scoring_weights").HasJsonbConversion<ScoringWeights>();
         builder.Property(s => s.Preferences).HasColumnName("profile_prefs").HasJsonbConversion<ProfilePreferences>();
+        builder.Property(s => s.Enrichment).HasColumnName("enrichment").HasJsonbConversion<EnrichmentSettings>();
     }
 }

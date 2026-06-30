@@ -6,8 +6,16 @@ import './base.css'
 export type UserStatus = 'new' | 'viewed' | 'interested' | 'dismissed'
 export type NormalizationQuality = 'Reported' | 'Estimated' | 'RoughEstimate'
 
+/** AI-output lifecycle states surfaced as chips (feature 002). */
+export type EnrichmentChipState = 'pending' | 'produced' | 'failed' | 'unreadable'
+
 export function statusChipClass(status: UserStatus): string {
   return `chip chip--${status}`
+}
+
+/** Maps an enrichment/CV-profile lifecycle state to its design-truth chip class. */
+export function enrichmentStatusClass(state: EnrichmentChipState): string {
+  return `chip chip--${state}`
 }
 
 export function qualityChipClass(quality: NormalizationQuality): string {

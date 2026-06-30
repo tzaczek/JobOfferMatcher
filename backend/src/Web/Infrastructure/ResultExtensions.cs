@@ -14,11 +14,17 @@ public static class ResultExtensions
     {
         "ScanInProgress" => StatusCodes.Status409Conflict,
         "Reentrancy" => StatusCodes.Status409Conflict,
+        "BusyMaintenance" => StatusCodes.Status409Conflict,
         "NotFound" => StatusCodes.Status404NotFound,
         "OfferNotFound" => StatusCodes.Status404NotFound,
         "SourceNotFound" => StatusCodes.Status404NotFound,
         "RoleGroupNotFound" => StatusCodes.Status404NotFound,
         "CvNotFound" => StatusCodes.Status404NotFound,
+        // Backup/restore (003): a backup created by a newer app can't be represented by this build.
+        "IncompatibleNewer" => StatusCodes.Status422UnprocessableEntity,
+        // Mid-flight failures after validation — live data was rolled back / no partial file sent.
+        "BackupFailed" => StatusCodes.Status500InternalServerError,
+        "RestoreFailed" => StatusCodes.Status500InternalServerError,
         _ => StatusCodes.Status400BadRequest,
     };
 

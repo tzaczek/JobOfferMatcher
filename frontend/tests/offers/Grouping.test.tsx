@@ -12,6 +12,18 @@ vi.mock('../../src/api/offers.ts', () => ({
   setOfferStatus: vi.fn(),
 }))
 vi.mock('../../src/api/scans.ts', () => ({ runScan: vi.fn(), getScanStatus: vi.fn() }))
+vi.mock('../../src/api/enrichment.ts', () => ({
+  getEnrichmentStatus: vi.fn().mockResolvedValue({
+    pendingTotal: 0,
+    pendingProfiles: 0,
+    pendingSummaries: 0,
+    pendingFits: 0,
+    failedTotal: 0,
+    hasProducedProfile: false,
+    lastResultAt: null,
+  }),
+  triggerRerun: vi.fn(),
+}))
 vi.mock('../../src/api/sources.ts', () => ({
   listSources: (...args: unknown[]) => listSources(...args),
 }))
@@ -69,7 +81,10 @@ function makeSource(overrides: Partial<SourceDto> = {}): SourceDto {
   }
 }
 
-const EMPTY: OffersResponse = { data: [], meta: { total: 0, new: 0, noReadableCv: true } }
+const EMPTY: OffersResponse = {
+  data: [],
+  meta: { total: 0, new: 0, hasProducedProfile: false, pendingEnrichment: 0, failedEnrichment: 0 },
+}
 
 describe('OfferCard grouped-feed entry (T065)', () => {
   it('renders per-source member links and the "Not the same role" control, and splits on click', () => {
@@ -166,7 +181,7 @@ describe('OffersPage split-group flow (T065)', () => {
           groupMembers: [{ offerId: 'o2', sourceName: 'Pracuj.pl', canonicalUrl: 'https://pracuj.pl/o2' }],
         }),
       ],
-      meta: { total: 1, new: 0, noReadableCv: true },
+      meta: { total: 1, new: 0, hasProducedProfile: false, pendingEnrichment: 0, failedEnrichment: 0 },
     }
     listOffers.mockResolvedValue(grouped)
 

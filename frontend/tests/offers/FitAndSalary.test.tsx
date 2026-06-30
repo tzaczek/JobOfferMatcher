@@ -9,6 +9,18 @@ vi.mock('../../src/api/offers.ts', () => ({
   setOfferStatus: vi.fn(),
 }))
 vi.mock('../../src/api/scans.ts', () => ({ runScan: vi.fn(), getScanStatus: vi.fn() }))
+vi.mock('../../src/api/enrichment.ts', () => ({
+  getEnrichmentStatus: vi.fn().mockResolvedValue({
+    pendingTotal: 0,
+    pendingProfiles: 0,
+    pendingSummaries: 0,
+    pendingFits: 0,
+    failedTotal: 0,
+    hasProducedProfile: true,
+    lastResultAt: null,
+  }),
+  triggerRerun: vi.fn(),
+}))
 
 import { OffersPage } from '../../src/pages/Offers/OffersPage.tsx'
 
@@ -30,7 +42,13 @@ function offerWithFit(): OfferDto {
       quality: 'Estimated',
       assumptions: ['midpoint 18000–22000 = 20000', 'B2B→Permanent-equivalent ×0.85'],
     },
-    fit: { score: 99, matched: ['C#', '.NET', 'remote'], missing: ['Kubernetes'] },
+    fit: {
+      state: 'produced',
+      score: 99,
+      matched: ['C#', '.NET', 'remote'],
+      missing: ['Kubernetes'],
+      rationale: 'Strong stack overlap',
+    },
     canonicalUrl: 'https://example.test/x',
     isNew: false,
     isUpdated: false,
@@ -62,7 +80,10 @@ describe('sort controls (T049a)', () => {
   beforeEach(() => listOffers.mockReset())
 
   it('renders the rank/salary/fit/recency sort options', async () => {
-    const empty: OffersResponse = { data: [], meta: { total: 0, new: 0, noReadableCv: false } }
+    const empty: OffersResponse = {
+      data: [],
+      meta: { total: 0, new: 0, hasProducedProfile: true, pendingEnrichment: 0, failedEnrichment: 0 },
+    }
     listOffers.mockResolvedValue(empty)
     render(<OffersPage />)
     await screen.findByTestId('empty-state')

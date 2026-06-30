@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useState } from 'react'
 import type {
+  ApplicationInput,
+  OffersQuery,
   OffersResponse,
   ScanStatusDto,
   SortKey,
   SourceDto,
-  StatusFilter,
   UserStatus,
 } from '../../api/types.ts'
-import { listOffers, setOfferStatus } from '../../api/offers.ts'
+import { clearOfferApplied, listOffers, markOfferApplied, setOfferStatus } from '../../api/offers.ts'
 import { getScanStatus, runScan } from '../../api/scans.ts'
 import { listSources } from '../../api/sources.ts'
 import { setRoleGroupOverride } from '../../api/roleGroups.ts'
@@ -15,15 +16,36 @@ import { exportUrl } from '../../api/export.ts'
 import { ApiError } from '../../api/client.ts'
 import { poll } from '../../lib/polling.ts'
 import { OfferCard } from '../../components/OfferCard/OfferCard.tsx'
+import { EnrichmentIndicator } from '../../components/EnrichmentIndicator/EnrichmentIndicator.tsx'
 import { ScanBanner } from './ScanBanner.tsx'
 import './OffersPage.css'
+
+/** The mutually-exclusive feed views surfaced by the segmented control. */
+type FeedView = 'all' | 'new' | 'applied' | 'dismissed'
+
+/** Map a feed view to the offers query it represents. */
+function viewQuery(view: FeedView): Pick<OffersQuery, 'status' | 'applied' | 'availability'> {
+  switch (view) {
+    case 'new':
+      return { status: 'new', availability: 'available' }
+    case 'applied':
+      // Show every application regardless of availability — a role you applied to may have closed.
+      return { status: 'all', applied: true, availability: 'all' }
+    case 'dismissed':
+      // The review-and-restore bin; show all regardless of availability so nothing silently vanishes.
+      return { status: 'dismissed', availability: 'all' }
+    default:
+      // The default feed hides dismissed offers (`active`); dismissing removes a card from here.
+      return { status: 'active', availability: 'available' }
+  }
+}
 
 export function OffersPage() {
   const [data, setData] = useState<OffersResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const [status, setStatus] = useState<StatusFilter>('all')
+  const [view, setView] = useState<FeedView>('all')
   const [sort, setSort] = useState<SortKey>('rank')
   const [source, setSource] = useState('')
   const [sources, setSources] = useState<SourceDto[]>([])
@@ -38,7 +60,7 @@ export function OffersPage() {
       setError(null)
       try {
         const result = await listOffers(
-          { status, source: source || undefined, sort, availability: 'available' },
+          { ...viewQuery(view), source: source || undefined, sort },
           signal,
         )
         setData(result)
@@ -50,7 +72,7 @@ export function OffersPage() {
         if (!signal?.aborted) setLoading(false)
       }
     },
-    [status, source, sort],
+    [view, source, sort],
   )
 
   useEffect(() => {
@@ -99,6 +121,26 @@ export function OffersPage() {
     }
   }
 
+  async function handleMarkApplied(offerId: string, input: ApplicationInput) {
+    try {
+      await markOfferApplied(offerId, input)
+      await load()
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : 'Failed to mark the offer applied.')
+      // Re-throw so the modal stays open on failure (it only closes on a resolved save).
+      throw e
+    }
+  }
+
+  async function handleClearApplied(offerId: string) {
+    try {
+      await clearOfferApplied(offerId)
+      await load()
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : 'Failed to update the offer.')
+    }
+  }
+
   async function handleSplitGroup(roleGroupId: string) {
     try {
       await setRoleGroupOverride(roleGroupId, 'notSame')
@@ -108,7 +150,14 @@ export function OffersPage() {
     }
   }
 
-  const isNewView = status === 'new'
+  const emptyMessage =
+    view === 'new'
+      ? 'No new offers — you are all caught up.'
+      : view === 'applied'
+        ? "No applications yet — mark an offer applied and it'll show up here."
+        : view === 'dismissed'
+          ? 'No dismissed offers — nothing to review.'
+          : 'No offers yet — run a scan to collect them.'
 
   return (
     <section className="offers-page">
@@ -137,21 +186,37 @@ export function OffersPage() {
 
       <ScanBanner scanning={scanning} status={scanStatus} error={scanError} />
 
+      <EnrichmentIndicator />
+
       <div className="offers-page__toolbar">
-        <div className="segmented" role="group" aria-label="Status filter">
+        <div className="segmented" role="group" aria-label="Feed filter">
           <button
             type="button"
-            className={status === 'all' ? 'segmented__btn segmented__btn--active' : 'segmented__btn'}
-            onClick={() => setStatus('all')}
+            className={view === 'all' ? 'segmented__btn segmented__btn--active' : 'segmented__btn'}
+            onClick={() => setView('all')}
           >
             All
           </button>
           <button
             type="button"
-            className={status === 'new' ? 'segmented__btn segmented__btn--active' : 'segmented__btn'}
-            onClick={() => setStatus('new')}
+            className={view === 'new' ? 'segmented__btn segmented__btn--active' : 'segmented__btn'}
+            onClick={() => setView('new')}
           >
             New
+          </button>
+          <button
+            type="button"
+            className={view === 'applied' ? 'segmented__btn segmented__btn--active' : 'segmented__btn'}
+            onClick={() => setView('applied')}
+          >
+            Applied
+          </button>
+          <button
+            type="button"
+            className={view === 'dismissed' ? 'segmented__btn segmented__btn--active' : 'segmented__btn'}
+            onClick={() => setView('dismissed')}
+          >
+            Dismissed
           </button>
         </div>
         <div className="offers-page__controls">
@@ -177,6 +242,7 @@ export function OffersPage() {
               <option value="rank">Best match</option>
               <option value="salary">Salary</option>
               <option value="fit">Fit</option>
+              <option value="published">Recently published</option>
               <option value="recency">Most recent</option>
             </select>
           </label>
@@ -197,7 +263,7 @@ export function OffersPage() {
 
       {!loading && !error && data && data.data.length === 0 && (
         <div className="state-block" data-testid="empty-state">
-          {isNewView ? 'No new offers — you are all caught up.' : 'No offers yet — run a scan to collect them.'}
+          {emptyMessage}
         </div>
       )}
 
@@ -208,6 +274,8 @@ export function OffersPage() {
               key={offer.offerId}
               offer={offer}
               onSetStatus={handleSetStatus}
+              onMarkApplied={handleMarkApplied}
+              onClearApplied={handleClearApplied}
               onSplitGroup={handleSplitGroup}
             />
           ))}

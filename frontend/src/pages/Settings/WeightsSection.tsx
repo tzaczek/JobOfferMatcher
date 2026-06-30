@@ -42,8 +42,11 @@ export function WeightsSection() {
 
   return (
     <form className="card settings-card" onSubmit={save}>
-      <h2 className="settings-card__title">Scoring weights</h2>
-      <p className="muted text-sm">Each axis contributes its weight to the 0–100 fit score. Must sum to 100.</p>
+      <h2 className="settings-card__title">Fit weights — guidance to Claude</h2>
+      <p className="muted text-sm">
+        These weights are <strong>guidance</strong> the Claude worker uses when judging each 0–100 fit
+        score — not a fixed formula. Raise an axis to make it weigh more heavily. Must sum to 100.
+      </p>
 
       <div className="weights-grid">
         {(Object.keys(LABELS) as WeightKey[]).map((key) => (

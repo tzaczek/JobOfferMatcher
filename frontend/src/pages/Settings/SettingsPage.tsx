@@ -4,6 +4,8 @@ import { getSchedule, updateSchedule } from '../../api/schedule.ts'
 import { ApiError } from '../../api/client.ts'
 import { WeightsSection } from './WeightsSection.tsx'
 import { NormalizationSection } from './NormalizationSection.tsx'
+import { EnrichmentSection } from './EnrichmentSection.tsx'
+import { BackupSection } from './BackupSection.tsx'
 import './SettingsPage.css'
 
 export function SettingsPage() {
@@ -111,7 +113,9 @@ export function SettingsPage() {
       </p>
 
       <WeightsSection />
+      <EnrichmentSection />
       <NormalizationSection />
+      <BackupSection />
     </section>
   )
 }

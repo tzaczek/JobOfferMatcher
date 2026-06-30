@@ -5,6 +5,10 @@
  */
 
 :root {
+  /* Light is the default; dark values live in the [data-theme='dark'] block below.
+     color-scheme keeps native controls (checkboxes, selects, scrollbars) in sync. */
+  color-scheme: light;
+
   /* ---- Palette: warm-neutral paper with an indigo/teal accent ---------------- */
   --c-ink-900: #14161f; /* primary text */
   --c-ink-700: #353a4d;
@@ -24,6 +28,10 @@
   --c-accent-600: #0d9488; /* teal — secondary accents */
   --c-accent-100: #d2f1ec;
 
+  /* Text drawn ON a brand-filled surface (primary button). Stays readable in both
+     themes: white on the dark light-mode button, dark on the bright dark-mode button. */
+  --c-on-brand: #ffffff;
+
   /* ---- Semantic status colors (defined once, reused everywhere) -------------- */
   --c-new-fg: #1d4ed8;
   --c-new-bg: #dbe7ff;
@@ -37,11 +45,23 @@
   --c-dismissed-bg: #f1f2f5;
   --c-viewed-fg: #6d28d9;
   --c-viewed-bg: #ece2fb;
+  --c-applied-fg: #0e7490;
+  --c-applied-bg: #cdeef5;
 
   --c-success: #059669;
   --c-warning: #d97706;
   --c-danger: #dc2626;
   --c-danger-bg: #fde4e4;
+
+  /* Enrichment lifecycle chips (AI summary/profile/fit — feature 002) */
+  --c-pending-fg: #5b6276;
+  --c-pending-bg: #eef1f6;
+  --c-produced-fg: #047857;
+  --c-produced-bg: #d2f1ec;
+  --c-failed-fg: #dc2626;
+  --c-failed-bg: #fde4e4;
+  --c-unreadable-fg: #64748b;
+  --c-unreadable-bg: #e7edf3;
 
   /* Salary-normalization quality chips (research §7 honesty signal) */
   --c-quality-reported: #047857;
@@ -98,4 +118,80 @@
 
   /* ---- Layout --------------------------------------------------------------- */
   --container-max: 1080px;
+}
+
+/*
+ * Dark theme — overrides ONLY the color/shadow tokens. Spacing, type, radii and
+ * motion are theme-agnostic and inherited from :root. Applied by setting
+ * data-theme="dark" on <html> (done pre-paint by the inline script in index.html,
+ * then by the theme toggle). Every value here is WCAG-AA verified against the
+ * surfaces it is used on (see the palette's contrast pass).
+ */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  /* ---- Ink ramp INVERTED: ink-900 = brightest primary text, 300 = dimmest ---- */
+  --c-ink-900: #e9ecf4; /* primary text */
+  --c-ink-700: #c4cad8;
+  --c-ink-500: #9aa2b5; /* secondary text */
+  --c-ink-400: #7b8499;
+  --c-ink-300: #6a7388; /* muted / separators */
+
+  /* ---- Paper ramp: paper-50 = app background (darkest), paper-0 = raised card -- */
+  --c-paper-0: #171a23; /* cards, inputs, table, active segment */
+  --c-paper-50: #0e1016; /* app background, inset wells (fit/group boxes) */
+  --c-paper-100: #222633; /* hover, segmented track, skill chip */
+  --c-paper-200: #2e3342; /* borders */
+  --c-paper-300: #3c4356; /* stronger borders: inputs, toggles, ghost button */
+
+  /* ---- Brand / accent — brightened so they carry on dark --------------------- */
+  --c-brand-600: #8b85f7; /* indigo: links, nav-active & banner text, button fill */
+  --c-brand-500: #9d98f9;
+  --c-brand-100: #262348; /* dark indigo tint behind brand-600 text */
+  --c-accent-600: #2dd4bf; /* teal */
+  --c-accent-100: #0f3b36; /* dark teal tint (quality-reported chip bg) */
+  --c-on-brand: #0e1016; /* dark text on the bright indigo button */
+
+  /* ---- Semantic status: bright fg on a dark tint of the same hue ------------- */
+  --c-new-fg: #93b4ff;
+  --c-new-bg: #16284a;
+  --c-updated-fg: #f0b860;
+  --c-updated-bg: #3a2a12;
+  --c-unavailable-fg: #9aa3b2;
+  --c-unavailable-bg: #23262f;
+  --c-interested-fg: #5bd6a0;
+  --c-interested-bg: #0f3024;
+  --c-dismissed-fg: #808997;
+  --c-dismissed-bg: #1c1f29;
+  --c-viewed-fg: #c4a5f5;
+  --c-viewed-bg: #271b3f;
+  --c-applied-fg: #5fd0e6;
+  --c-applied-bg: #0c3942;
+
+  --c-success: #34d399;
+  --c-warning: #fbbf24;
+  --c-danger: #f87171;
+  --c-danger-bg: #3a1a1c;
+
+  --c-pending-fg: #9aa3b2;
+  --c-pending-bg: #20242f;
+  --c-produced-fg: #5bd6a0;
+  --c-produced-bg: #0f3024;
+  --c-failed-fg: #f87171;
+  --c-failed-bg: #3a1a1c;
+  --c-unreadable-fg: #9aa6bb;
+  --c-unreadable-bg: #1e242f;
+
+  --c-quality-reported: #5bd6a0;
+  --c-quality-estimated: #f0b860;
+  --c-quality-rough: #9aa3b2;
+
+  --c-fit-low: #f87171;
+  --c-fit-mid: #fbbf24;
+  --c-fit-high: #34d399;
+
+  /* ---- Shadows: near-black + deeper so elevation still reads on dark --------- */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.6);
 }

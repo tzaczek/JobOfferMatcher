@@ -79,7 +79,7 @@ h4 {
 }
 .btn--primary {
   background: var(--c-brand-600);
-  color: var(--c-paper-0);
+  color: var(--c-on-brand);
 }
 .btn--primary:hover:not(:disabled) {
   background: var(--c-brand-500);
@@ -95,6 +95,17 @@ h4 {
 .btn--sm {
   font-size: var(--fs-sm);
   padding: var(--sp-1) var(--sp-3);
+}
+/* Destructive action (the Restore button replaces all live data) — mirrors .chip--missing,
+   reusing the danger tokens so there are no scattered colour literals (Principle VIII). */
+.btn--danger {
+  background: var(--c-danger-bg);
+  color: var(--c-danger);
+  border-color: var(--c-danger);
+}
+.btn--danger:hover:not(:disabled) {
+  background: var(--c-danger);
+  color: var(--c-on-brand);
 }
 
 /* ---- Chips (status, quality, skills) --------------------------------------- */
@@ -132,6 +143,26 @@ h4 {
 .chip--viewed {
   color: var(--c-viewed-fg);
   background: var(--c-viewed-bg);
+}
+.chip--applied {
+  color: var(--c-applied-fg);
+  background: var(--c-applied-bg);
+}
+.chip--pending {
+  color: var(--c-pending-fg);
+  background: var(--c-pending-bg);
+}
+.chip--produced {
+  color: var(--c-produced-fg);
+  background: var(--c-produced-bg);
+}
+.chip--failed {
+  color: var(--c-failed-fg);
+  background: var(--c-failed-bg);
+}
+.chip--unreadable {
+  color: var(--c-unreadable-fg);
+  background: var(--c-unreadable-bg);
 }
 .chip--quality-reported {
   color: var(--c-quality-reported);

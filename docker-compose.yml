@@ -1,6 +1,6 @@
-# Local-first PostgreSQL for the Job Offer Matcher (research §5).
-# Pinned image + named volume; the password comes from a gitignored .env (Principle IV).
-# Start with: docker compose up -d db   (or via ./start.ps1)
+# Full local-first stack for the Job Offer Matcher (research §5), all in containers.
+# Pinned images + named volumes; the password comes from a gitignored .env (Principle IV).
+# Start everything with: docker compose up -d --build   →  UI at http://localhost:8080
 services:
   db:
     image: postgres:17-alpine
@@ -20,6 +20,29 @@ services:
       timeout: 5s
       retries: 10
 
+  # The whole app in one container: ASP.NET Core host serving the built SPA + /api
+  # (README §3 "run for real"). EF append-only migrations apply at startup (Principle IX).
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: jobs-app
+    container_name: jobs-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # Talk to the db service over the compose network (internal port 5432).
+      ConnectionStrings__AppDb: "Host=db;Port=5432;Database=${POSTGRES_DB:-jobs};Username=${POSTGRES_USER:-jobs};Password=${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}"
+    ports:
+      - "${APP_PORT:-8080}:8080"
+    volumes:
+      # Persist uploaded CVs across container rebuilds (gitignored on the host).
+      - jobs_cvdata:/app/cv-data
+
 volumes:
   jobs_pgdata:
     name: jobs_pgdata
+  jobs_cvdata:
+    name: jobs_cvdata

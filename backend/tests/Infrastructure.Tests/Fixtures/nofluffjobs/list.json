@@ -1,0 +1,695 @@
+{
+  "postings": [
+    {
+      "id": "fullstack-developer-net-react-moondigo-Remote",
+      "name": "Moondigo Sp. z o.o.",
+      "location": {
+        "places": [
+          {
+            "city": "Remote",
+            "url": "fullstack-developer-net-react-moondigo-remote-1"
+          },
+          {
+            "country": {
+              "code": "POL",
+              "name": "Poland"
+            },
+            "url": "fullstack-developer-net-react-moondigo-lower-silesian",
+            "provinceOnly": true,
+            "province": "lower-silesian"
+          },
+          {
+            "country": {
+              "code": "POL",
+              "name": "Poland"
+            },
+            "url": "fullstack-developer-net-react-moondigo-kuyavian-pomeranian",
+            "provinceOnly": true,
+            "province": "kuyavian-pomeranian"
+          },
+          {
+            "country": {
+              "code": "POL",
+              "name": "Poland"
+            },
+            "url": "fullstack-developer-net-react-moondigo-lodz",
+            "provinceOnly": true,
+            "province": "lodz"
+          },
+          {
+            "country": {
+              "code": "POL",
+              "name": "Poland"
+            },
+            "url": "fullstack-developer-net-react-moondigo-lublin",
+            "provinceOnly": true,
+            "province": "lublin"
+          },
+          {
+            "country": {
+              "code": "POL",
+              "name": "Poland"
+            },
+            "url": "fullstack-developer-net-react-moondigo-lubusz",
+            "provinceOnly": true,
+            "province": "lubusz"
+          },
+          {
+            "country": {
+              "code": "POL",
+              "name": "Poland"
+            },
+            "url": "fullstack-developer-net-react-moondigo-lesser-poland",
+            "provinceOnly": true,
+            "province": "lesser-poland"
+          },
+          {
+            "country": {
+              "code": "POL",
+              "name": "Poland"
+            },
+            "url": "fullstack-developer-net-react-moondigo-masovian",
+            "provinceOnly": true,
+            "province": "masovian"
+          },
+          {
+            "country": {
+              "code": "POL",
+              "name": "Poland"
+            },
+            "url": "fullstack-developer-net-react-moondigo-opole",
+            "provinceOnly": true,
+            "province": "opole"
+          },
+          {
+            "country": {
+              "code": "POL",
+              "name": "Poland"
+            },
+            "url": "fullstack-developer-net-react-moondigo-subcarpathian",
+            "provinceOnly": true,
+            "province": "subcarpathian"
+          },
+          {
+            "country": {
+              "code": "POL",
+              "name": "Poland"
+            },
+            "url": "fullstack-developer-net-react-moondigo-podlaskie",
+            "provinceOnly": true,
+            "province": "podlaskie"
+          },
+          {
+            "country": {
+              "code": "POL",
+              "name": "Poland"
+            },
+            "url": "fullstack-developer-net-react-moondigo-pomeranian",
+            "provinceOnly": true,
+            "province": "pomeranian"
+          },
+          {
+            "country": {
+              "code": "POL",
+              "name": "Poland"
+            },
+            "url": "fullstack-developer-net-react-moondigo-silesian",
+            "provinceOnly": true,
+            "province": "silesian"
+          },
+          {
+            "country": {
+              "code": "POL",
+              "name": "Poland"
+            },
+            "url": "fullstack-developer-net-react-moondigo-holy-cross",
+            "provinceOnly": true,
+            "province": "holy-cross"
+          },
+          {
+            "country": {
+              "code": "POL",
+              "name": "Poland"
+            },
+            "url": "fullstack-developer-net-react-moondigo-warmian-masurian",
+            "provinceOnly": true,
+            "province": "warmian-masurian"
+          },
+          {
+            "country": {
+              "code": "POL",
+              "name": "Poland"
+            },
+            "url": "fullstack-developer-net-react-moondigo-greater-poland",
+            "provinceOnly": true,
+            "province": "greater-poland"
+          },
+          {
+            "country": {
+              "code": "POL",
+              "name": "Poland"
+            },
+            "url": "fullstack-developer-net-react-moondigo-west-pomeranian",
+            "provinceOnly": true,
+            "province": "west-pomeranian"
+          }
+        ],
+        "fullyRemote": true
+      },
+      "posted": 1781175119812,
+      "renewed": 1782730319812,
+      "title": "Fullstack Developer .NET + React",
+      "technology": ".NET",
+      "category": "fullstack",
+      "seniority": [
+        "Senior"
+      ],
+      "url": "fullstack-developer-net-react-moondigo-remote-1",
+      "regions": [
+        "pl"
+      ],
+      "fullyRemote": false,
+      "salary": {
+        "from": 22000,
+        "to": 27000,
+        "type": "b2b",
+        "currency": "PLN",
+        "disclosedAt": "VISIBLE",
+        "flexibleUpperBound": false
+      },
+      "tiles": {
+        "values": [
+          {
+            "value": "fullstack",
+            "type": "category"
+          },
+          {
+            "value": ".NET",
+            "type": "requirement"
+          },
+          {
+            "value": "C#",
+            "type": "requirement"
+          },
+          {
+            "value": "React",
+            "type": "requirement"
+          }
+        ]
+      },
+      "reference": "YB43U7GA"
+    },
+    {
+      "id": "fullstack-developer-net-react-moondigo-lower-silesian",
+      "name": "Moondigo Sp. z o.o.",
+      "location": {
+        "places": [
+          {
+            "country": {
+              "code": "POL",
+              "name": "Poland"
+            },
+            "url": "fullstack-developer-net-react-moondigo-lower-silesian",
+            "provinceOnly": true,
+            "province": "lower-silesian"
+          },
+          {
+            "city": "Remote",
+            "url": "fullstack-developer-net-react-moondigo-remote-1"
+          },
+          {
+            "country": {
+              "code": "POL",
+              "name": "Poland"
+            },
+            "url": "fullstack-developer-net-react-moondigo-kuyavian-pomeranian",
+            "provinceOnly": true,
+            "province": "kuyavian-pomeranian"
+          },
+          {
+            "country": {
+              "code": "POL",
+              "name": "Poland"
+            },
+            "url": "fullstack-developer-net-react-moondigo-lodz",
+            "provinceOnly": true,
+            "province": "lodz"
+          },
+          {
+            "country": {
+              "code": "POL",
+              "name": "Poland"
+            },
+            "url": "fullstack-developer-net-react-moondigo-lublin",
+            "provinceOnly": true,
+            "province": "lublin"
+          },
+          {
+            "country": {
+              "code": "POL",
+              "name": "Poland"
+            },
+            "url": "fullstack-developer-net-react-moondigo-lubusz",
+            "provinceOnly": true,
+            "province": "lubusz"
+          },
+          {
+            "country": {
+              "code": "POL",
+              "name": "Poland"
+            },
+            "url": "fullstack-developer-net-react-moondigo-lesser-poland",
+            "provinceOnly": true,
+            "province": "lesser-poland"
+          },
+          {
+            "country": {
+              "code": "POL",
+              "name": "Poland"
+            },
+            "url": "fullstack-developer-net-react-moondigo-masovian",
+            "provinceOnly": true,
+            "province": "masovian"
+          },
+          {
+            "country": {
+              "code": "POL",
+              "name": "Poland"
+            },
+            "url": "fullstack-developer-net-react-moondigo-opole",
+            "provinceOnly": true,
+            "province": "opole"
+          },
+          {
+            "country": {
+              "code": "POL",
+              "name": "Poland"
+            },
+            "url": "fullstack-developer-net-react-moondigo-subcarpathian",
+            "provinceOnly": true,
+            "province": "subcarpathian"
+          },
+          {
+            "country": {
+              "code": "POL",
+              "name": "Poland"
+            },
+            "url": "fullstack-developer-net-react-moondigo-podlaskie",
+            "provinceOnly": true,
+            "province": "podlaskie"
+          },
+          {
+            "country": {
+              "code": "POL",
+              "name": "Poland"
+            },
+            "url": "fullstack-developer-net-react-moondigo-pomeranian",
+            "provinceOnly": true,
+            "province": "pomeranian"
+          },
+          {
+            "country": {
+              "code": "POL",
+              "name": "Poland"
+            },
+            "url": "fullstack-developer-net-react-moondigo-silesian",
+            "provinceOnly": true,
+            "province": "silesian"
+          },
+          {
+            "country": {
+              "code": "POL",
+              "name": "Poland"
+            },
+            "url": "fullstack-developer-net-react-moondigo-holy-cross",
+            "provinceOnly": true,
+            "province": "holy-cross"
+          },
+          {
+            "country": {
+              "code": "POL",
+              "name": "Poland"
+            },
+            "url": "fullstack-developer-net-react-moondigo-warmian-masurian",
+            "provinceOnly": true,
+            "province": "warmian-masurian"
+          },
+          {
+            "country": {
+              "code": "POL",
+              "name": "Poland"
+            },
+            "url": "fullstack-developer-net-react-moondigo-greater-poland",
+            "provinceOnly": true,
+            "province": "greater-poland"
+          },
+          {
+            "country": {
+              "code": "POL",
+              "name": "Poland"
+            },
+            "url": "fullstack-developer-net-react-moondigo-west-pomeranian",
+            "provinceOnly": true,
+            "province": "west-pomeranian"
+          }
+        ],
+        "fullyRemote": true
+      },
+      "posted": 1781175119812,
+      "renewed": 1782730319812,
+      "title": "Fullstack Developer .NET + React",
+      "technology": ".NET",
+      "category": "fullstack",
+      "seniority": [
+        "Senior"
+      ],
+      "url": "fullstack-developer-net-react-moondigo-lower-silesian",
+      "regions": [
+        "pl"
+      ],
+      "fullyRemote": false,
+      "salary": {
+        "from": 22000,
+        "to": 27000,
+        "type": "b2b",
+        "currency": "PLN",
+        "disclosedAt": "VISIBLE",
+        "flexibleUpperBound": false
+      },
+      "tiles": {
+        "values": [
+          {
+            "value": "fullstack",
+            "type": "category"
+          },
+          {
+            "value": ".NET",
+            "type": "requirement"
+          },
+          {
+            "value": "C#",
+            "type": "requirement"
+          },
+          {
+            "value": "React",
+            "type": "requirement"
+          }
+        ]
+      },
+      "reference": "YB43U7GA"
+    },
+    {
+      "id": "senior-full-stack-developer-net-remote-nettify-Remote",
+      "name": "Nettify",
+      "location": {
+        "places": [
+          {
+            "city": "Remote",
+            "url": "senior-full-stack-developer-net-remote-nettify"
+          },
+          {
+            "city": "Prague",
+            "country": {
+              "code": "CZE",
+              "name": "Czech Republic"
+            },
+            "url": "senior-full-stack-developer-net-remote-nettify-prague"
+          },
+          {
+            "country": {
+              "code": "CZE",
+              "name": "Czech"
+            },
+            "url": "senior-full-stack-developer-net-remote-nettify-south-bohemian",
+            "provinceOnly": true,
+            "province": "south-bohemian"
+          },
+          {
+            "country": {
+              "code": "CZE",
+              "name": "Czech"
+            },
+            "url": "senior-full-stack-developer-net-remote-nettify-plzen",
+            "provinceOnly": true,
+            "province": "plzen"
+          },
+          {
+            "country": {
+              "code": "CZE",
+              "name": "Czech"
+            },
+            "url": "senior-full-stack-developer-net-remote-nettify-karlovy-vary",
+            "provinceOnly": true,
+            "province": "karlovy-vary"
+          },
+          {
+            "country": {
+              "code": "CZE",
+              "name": "Czech"
+            },
+            "url": "senior-full-stack-developer-net-remote-nettify-usti-nad-labem",
+            "provinceOnly": true,
+            "province": "usti-nad-labem"
+          },
+          {
+            "country": {
+              "code": "CZE",
+              "name": "Czech"
+            },
+            "url": "senior-full-stack-developer-net-remote-nettify-liberec",
+            "provinceOnly": true,
+            "province": "liberec"
+          },
+          {
+            "country": {
+              "code": "CZE",
+              "name": "Czech"
+            },
+            "url": "senior-full-stack-developer-net-remote-nettify-hradec-kralove",
+            "provinceOnly": true,
+            "province": "hradec-kralove"
+          },
+          {
+            "country": {
+              "code": "CZE",
+              "name": "Czech"
+            },
+            "url": "senior-full-stack-developer-net-remote-nettify-pardubice",
+            "provinceOnly": true,
+            "province": "pardubice"
+          },
+          {
+            "country": {
+              "code": "CZE",
+              "name": "Czech"
+            },
+            "url": "senior-full-stack-developer-net-remote-nettify-vysocina",
+            "provinceOnly": true,
+            "province": "vysocina"
+          },
+          {
+            "country": {
+              "code": "CZE",
+              "name": "Czech"
+            },
+            "url": "senior-full-stack-developer-net-remote-nettify-south-moravian",
+            "provinceOnly": true,
+            "province": "south-moravian"
+          },
+          {
+            "country": {
+              "code": "CZE",
+              "name": "Czech"
+            },
+            "url": "senior-full-stack-developer-net-remote-nettify-olomouc",
+            "provinceOnly": true,
+            "province": "olomouc"
+          },
+          {
+            "country": {
+              "code": "CZE",
+              "name": "Czech"
+            },
+            "url": "senior-full-stack-developer-net-remote-nettify-zlin",
+            "provinceOnly": true,
+            "province": "zlin"
+          },
+          {
+            "country": {
+              "code": "CZE",
+              "name": "Czech"
+            },
+            "url": "senior-full-stack-developer-net-remote-nettify-moravian-silesian",
+            "provinceOnly": true,
+            "province": "moravian-silesian"
+          }
+        ],
+        "fullyRemote": true
+      },
+      "posted": 1782387430567,
+      "renewed": 1782560230567,
+      "title": "Senior Full-Stack Developer (.NET) – Remote",
+      "technology": ".NET",
+      "category": "fullstack",
+      "seniority": [
+        "Senior"
+      ],
+      "url": "senior-full-stack-developer-net-remote-nettify",
+      "regions": [
+        "cz",
+        "pl"
+      ],
+      "fullyRemote": false,
+      "salary": {
+        "from": 19300,
+        "to": 23589,
+        "type": "b2b",
+        "currency": "PLN",
+        "disclosedAt": "VISIBLE",
+        "flexibleUpperBound": false
+      },
+      "tiles": {
+        "values": [
+          {
+            "value": "fullstack",
+            "type": "category"
+          },
+          {
+            "value": ".NET",
+            "type": "requirement"
+          },
+          {
+            "value": "C#",
+            "type": "requirement"
+          },
+          {
+            "value": "Azure",
+            "type": "requirement"
+          }
+        ]
+      },
+      "reference": "A6UVEW9P"
+    },
+    {
+      "id": "senior-full-stack-engineer-net-react-harvey-nash-technology-Warszawa",
+      "name": "Harvey Nash Technology",
+      "location": {
+        "places": [
+          {
+            "city": "Warszawa",
+            "country": {
+              "code": "POL",
+              "name": "Poland"
+            },
+            "url": "senior-full-stack-engineer-net-react-harvey-nash-technology-warszawa"
+          }
+        ],
+        "fullyRemote": false
+      },
+      "posted": 1781601565549,
+      "renewed": 1782638365549,
+      "title": "Senior Full Stack Engineer (.NET / React)",
+      "technology": ".NET",
+      "category": "fullstack",
+      "seniority": [
+        "Senior"
+      ],
+      "url": "senior-full-stack-engineer-net-react-harvey-nash-technology-warszawa",
+      "regions": [
+        "pl"
+      ],
+      "fullyRemote": false,
+      "salary": {
+        "from": 28000,
+        "to": 33000,
+        "type": "permanent",
+        "currency": "PLN",
+        "disclosedAt": "VISIBLE",
+        "flexibleUpperBound": false
+      },
+      "tiles": {
+        "values": [
+          {
+            "value": "fullstack",
+            "type": "category"
+          },
+          {
+            "value": ".NET",
+            "type": "requirement"
+          },
+          {
+            "value": "C#",
+            "type": "requirement"
+          },
+          {
+            "value": "React",
+            "type": "requirement"
+          }
+        ]
+      },
+      "reference": "M8OVK0BK"
+    },
+    {
+      "id": "net-developer-avenga-agencja-pracy-nr-kraz-8448-Łódź-2",
+      "name": "AVENGA (Agencja Pracy, nr KRAZ: 8448)",
+      "location": {
+        "places": [
+          {
+            "city": "Łódź",
+            "country": {
+              "code": "POL",
+              "name": "Poland"
+            },
+            "url": "net-developer-avenga-agencja-pracy-nr-kraz-8448-lodz-4"
+          }
+        ],
+        "fullyRemote": false,
+        "hybridDesc": "Obowiązkowe 2 wizyty w miesiącu w biurze w Łodzi"
+      },
+      "posted": 1782727888535,
+      "title": ".Net Developer",
+      "technology": ".NET",
+      "category": "backend",
+      "seniority": [
+        "Mid"
+      ],
+      "url": "net-developer-avenga-agencja-pracy-nr-kraz-8448-lodz-4",
+      "regions": [
+        "pl"
+      ],
+      "fullyRemote": false,
+      "salary": {
+        "from": 20160,
+        "to": 23520,
+        "type": "b2b",
+        "currency": "PLN",
+        "disclosedAt": "VISIBLE",
+        "flexibleUpperBound": false
+      },
+      "tiles": {
+        "values": [
+          {
+            "value": "backend",
+            "type": "category"
+          },
+          {
+            "value": ".NET",
+            "type": "requirement"
+          },
+          {
+            "value": "C#",
+            "type": "requirement"
+          },
+          {
+            "value": ".NET CORE",
+            "type": "requirement"
+          }
+        ]
+      },
+      "reference": "TT1V91RL"
+    }
+  ],
+  "totalCount": 5,
+  "totalPages": 1,
+  "rawSearch": "requirement=C#,.NET"
+}

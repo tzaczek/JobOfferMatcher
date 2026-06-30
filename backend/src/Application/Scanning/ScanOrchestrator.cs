@@ -1,7 +1,9 @@
 using JobOfferMatcher.Application.Abstractions;
+using JobOfferMatcher.Application.Enrichment;
 using JobOfferMatcher.Application.Sources;
 using JobOfferMatcher.Domain.Common;
 using JobOfferMatcher.Domain.Common.Ids;
+using JobOfferMatcher.Domain.Enrichment;
 using JobOfferMatcher.Domain.Offers;
 using JobOfferMatcher.Domain.Scans;
 using JobOfferMatcher.Domain.Sources;
@@ -21,8 +23,10 @@ public sealed class ScanOrchestrator(
     IScanRunRepository scanRuns,
     IJobSourceFactory sourceFactory,
     RoleGroupingService roleGrouping,
+    IEnrichmentRepository enrichment,
     IUnitOfWork unitOfWork,
     ScanConcurrencyGuard concurrency,
+    MaintenanceGate maintenance,
     TimeProvider time,
     ILogger<ScanOrchestrator> logger) : IScanRunner
 {
@@ -34,6 +38,12 @@ public sealed class ScanOrchestrator(
 
     public async Task<Result<ScanRunId>> RunAsync(ScanRequest request, CancellationToken ct = default)
     {
+        // A restore pauses scanning (FR-020): refuse cleanly rather than write during the wipe/reload.
+        if (maintenance.IsMaintenanceActive)
+        {
+            return ScanInProgress;
+        }
+
         if (!await concurrency.TryEnterAsync())
         {
             return ScanInProgress;
@@ -142,6 +152,9 @@ public sealed class ScanOrchestrator(
             await offers.AddVersionAsync(OfferVersion.Create(created.Id, now, ChangeTier.Major, collected.Content, fingerprint), ct);
             await offers.AddEventAsync(OfferEvent.Create(created.Id, now, OfferEventType.FirstSeen), ct);
             await offers.AddEventAsync(OfferEvent.Create(created.Id, now, OfferEventType.Surfaced), ct);
+            // ADR-3: every offer carries Pending derived-cache satellites (the invariant; FR-014 backfill mirrors this).
+            await enrichment.AddEnrichmentAsync(OfferEnrichment.CreatePending(created.Id), ct);
+            await enrichment.AddFitAsync(OfferFit.CreatePending(created.Id), ct);
             offerId = created.Id;
             tally.New++;
             touched.Add(created.Id);
@@ -150,6 +163,7 @@ public sealed class ScanOrchestrator(
         {
             var wasUnavailable = existing.Availability == AvailabilityStatus.NoLongerAvailable;
             var kind = OfferClassifier.Classify(existing.CurrentFingerprint, fingerprint);
+            var beforeEnrichmentHash = EnrichmentHashOf(existing);
 
             if (kind == OfferChangeKind.Updated)
             {
@@ -162,13 +176,22 @@ public sealed class ScanOrchestrator(
             }
             else
             {
-                // Already seen, unchanged → bump last-seen only; never re-flag new (FR-013).
+                // Already seen, unchanged → bump last-seen only; never re-flag new (FR-013). ADR-3:
+                // silently persist Minor-tier (description/company/location) edits for the summary hash.
                 existing.RegisterSighting(now);
+                existing.RefreshMinorContent(collected.Content);
             }
 
             if (wasUnavailable && existing.Availability == AvailabilityStatus.Available)
             {
                 await offers.AddEventAsync(OfferEvent.Create(existing.Id, now, OfferEventType.Reappeared), ct);
+            }
+
+            // Eager invalidation: if the offer's enrichment inputs changed, re-arm its summary + fit
+            // satellites to Pending (FR-006/FR-007). Never rolls back the offers upsert (same save).
+            if (EnrichmentHashOf(existing) != beforeEnrichmentHash)
+            {
+                await InvalidateSatellitesAsync(existing.Id, ct);
             }
 
             offerId = existing.Id;
@@ -210,6 +233,33 @@ public sealed class ScanOrchestrator(
 
         await unitOfWork.SaveChangesAsync(ct);
         return (ScanOutcome.Complete, null);
+    }
+
+    private static string EnrichmentHashOf(Offer o) =>
+        OfferEnrichmentInputs.Hash(o.CurrentFingerprint.Hash, o.Company, o.Location, o.DescriptionHtml).Serialized;
+
+    /// <summary>Re-arm an offer's summary + fit satellites to Pending (creating them if somehow absent — invariant).</summary>
+    private async Task InvalidateSatellitesAsync(OfferId offerId, CancellationToken ct)
+    {
+        var enrichmentRow = await enrichment.GetEnrichmentAsync(offerId, ct);
+        if (enrichmentRow is null)
+        {
+            await enrichment.AddEnrichmentAsync(OfferEnrichment.CreatePending(offerId), ct);
+        }
+        else
+        {
+            enrichmentRow.Invalidate();
+        }
+
+        var fitRow = await enrichment.GetFitAsync(offerId, ct);
+        if (fitRow is null)
+        {
+            await enrichment.AddFitAsync(OfferFit.CreatePending(offerId), ct);
+        }
+        else
+        {
+            fitRow.Invalidate();
+        }
     }
 
     private async Task<IReadOnlyList<JobSource>> ResolveSourcesAsync(ScanRequest request, CancellationToken ct)

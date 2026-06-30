@@ -10,7 +10,7 @@ public sealed class FingerprintClassificationTests
     {
         Title = "Senior .NET Engineer",
         Company = "Acme",
-        CanonicalUrl = "https://justjoin.it/job-offers/acme",
+        CanonicalUrl = "https://justjoin.it/job-offer/acme",
         WorkMode = WorkMode.Remote,
         Seniority = "senior",
         RequiredSkills = ["C#", ".NET"],

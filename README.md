@@ -1,11 +1,15 @@
 # Job Offer Matcher
 
 A **local-first, single-user web app** that periodically collects job offers from a configured
-search, tracks them with **append-only history**, scores each offer against your CV, and presents
-a **new-vs-seen**, **salary-and-fit-ranked** feed. It runs entirely on your machine: collection
-hits a job source's public JSON API, all offers, salary data, history and CVs are stored in a
-local PostgreSQL database, and CV matching is done locally (no external LLM by default). The only
-thing that leaves the machine is the non-PII search filter used to query the source.
+search, tracks them with **append-only history**, enriches each offer with an AI summary + key
+skills and a 0–100 fit score against your CV, and presents a **new-vs-seen**,
+**salary-and-fit-ranked** feed. It runs entirely on your machine: collection hits a job source's
+public JSON API, and all offers, salary data, history and CVs are stored in a local PostgreSQL
+database. The AI outputs (offer summaries/key-skills, a recruiter-style CV profile, and the fit
+score with matched/missing + rationale) are produced **only** by your own **Claude Code session
+under your Max plan** acting as a local worker — the backend imports no AI SDK and makes no
+external AI call. The only thing that leaves the machine is the non-PII search filter used to
+query the source. Un-produced AI outputs show **"pending"**, never a non-AI fallback.
 
 Stack: **React** (Vite, TypeScript) front end + **.NET 10** (ASP.NET Core) back end +
 **PostgreSQL** (EF Core, append-only migrations). Layered architecture
@@ -100,34 +104,95 @@ live source API.
 
 ---
 
+## AI enrichment — the `/enrich` worker
+
+Offer summaries + key skills, the recruiter-style CV profile, and the 0–100 fit score (with
+matched/missing skills + a one-line rationale) are **AI-generated**, but the backend never calls an
+AI service. Instead it exposes a small **loopback-only enrichment queue** (`/api/enrichment/*`), and
+**your own Claude Code session under your Max plan** drains it as a worker. This keeps everything
+local and off the paid Anthropic API (FR-012 / SC-005).
+
+> **Runbook:** step-by-step instructions (including the container-CV gotcha and re-run triggers) live
+> in [`docs/enrichment-worker.md`](docs/enrichment-worker.md). The essentials follow.
+
+**Run the worker.** With the app running (`./start.ps1`), open Claude Code in this repo and run the
+slash command:
+
+```
+/enrich
+```
+
+It loops `GET /api/enrichment/pending` → produces each output **in-session** (reading the CV PDF
+directly for the profile) → `POST /api/enrichment/results`, until the queue is drained. It is
+**stateless and safe to re-run** any time; staleness is keyed by an input hash, so only changed
+inputs are reprocessed. The feed shows a **pending / failed indicator** with a manual **re-run**
+button, and the CV / offer cards render `pending` / `produced` / `failed` (and `unreadable` for an
+image-only CV) — never a fabricated score.
+
+**Tuning.** Settings → *Enrichment limits* configures the soft caps (summary/CV-summary words, max
+key skills, fit-rationale words, retry limit). The *Fit weights* are **guidance to Claude**, not a
+fixed formula — raise an axis to make it weigh more heavily in the score.
+
+**Run-mode caveat (ADR-4).** The worker and the app must share a host + filesystem. The supported
+mode is the default `./start.ps1` (Postgres in Docker, **app via `dotnet run`** on
+`http://localhost:5180`), where loopback is genuine and the worker can read the CV by local path.
+The full-container `docker compose` packaging is **not** supported for enrichment as-is (a host
+worker can't reach the container's loopback or read the container-internal CV path); to use it, bind
+the published port to `127.0.0.1` and mount `cv-data` to a host path, or run the app as a host
+process for the enrichment session. The `/api/enrichment/*` guard is **fail-closed loopback** (any
+non-loopback or unknown remote IP → 403), which is the load-bearing privacy control because the
+channel carries CV/offer text.
+
+---
+
 ## Backup & restore
 
-Your data is recoverable two ways (Principle IX — append-only migrations, deliberate destructive
-ops):
+Your data is recoverable (Principle IX — append-only migrations, deliberate destructive ops). The
+primary path is the **one-click backup & restore** in the app; the manual dump and the export are
+complementary.
 
-**1. Database dump / restore.** The Postgres container is the `db` service (`jobs-postgres`),
-database/user `jobs`:
+**1. In-app backup & restore (recommended).** Settings → **Backup & Restore**:
+
+- **Backup** downloads a single `jobs-backup-<utc>.zip` capturing **everything** — the whole
+  PostgreSQL database *and* your uploaded CV files (`cv-data/`, whose PDF bytes are not in the DB).
+  It is built entirely in-process via Npgsql `COPY` (no `pg_dump`/Docker needed; works in host and
+  container modes), runs while the app stays usable, and never alters live data.
+- **Restore** uploads a backup: the app validates it, shows a summary (when it was taken, per-table
+  counts, CV count, and a Same/Older/Newer **compatibility** badge), takes an automatic **safety
+  pre-backup** of the current state, then — behind an explicit confirm — replaces both stores
+  **all-or-nothing** (one DB transaction + an atomic `cv-data` swap; rollback on any failure). An
+  older backup loads into the current schema (missing satellite rows are backfilled); a backup from
+  a *newer* app version is refused.
+
+The archive is **unencrypted** and holds personal data — it is **gitignored** (`*backup*.zip`,
+`backups/`) and must never be committed (Principle IV). Safety pre-backups are written server-side
+under `backups/` (also gitignored). The API is loopback-only:
+
+```
+GET  /api/backup            # download a complete backup (DB + CV files)
+POST /api/backup/inspect    # validate + summarise an upload without restoring
+POST /api/backup/restore    # guarded, all-or-nothing restore from an upload
+```
+
+**2. Manual database dump (alternative).** The Postgres container is the `db` service
+(`jobs-postgres`), database/user `jobs`:
 
 ```powershell
-# Back up
 docker compose exec -T db pg_dump -U jobs -d jobs -Fc > jobs-backup.dump
-
-# Restore (into a running, empty db)
 docker compose exec -T db pg_restore -U jobs -d jobs --clean < jobs-backup.dump
 ```
 
-The data itself lives in the named Docker volume `jobs_pgdata`, which survives container
-restarts and can be backed up independently.
+The data also lives in the named Docker volume `jobs_pgdata`, which survives container restarts.
+Note: this dumps only the database — it does **not** include the on-disk CV files that the in-app
+backup bundles.
 
-**2. In-app export.** A portable, human-readable record of offers + statuses + history:
+**3. In-app export (offers only).** A portable, human-readable record of offers + statuses +
+history (complements, does not replace, the full backup):
 
 ```
 GET /api/export?format=json
 GET /api/export?format=csv
 ```
-
-Open the downloaded file outside the app. CVs are stored locally (under `cv/`) and are
-**gitignored** — back them up yourself; they are never committed and never leave the machine.
 
 ---
 

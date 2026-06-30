@@ -44,3 +44,14 @@ export function formatDate(iso: string | null): string {
   const d = new Date(iso)
   return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
 }
+
+/**
+ * Format a calendar date that is stored as a midnight-UTC instant (e.g. the applied date), rendering
+ * in UTC so what the user picked == what is shown — regardless of the viewer's timezone.
+ */
+export function formatDateUtc(iso: string | null): string {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ''
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })
+}

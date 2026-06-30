@@ -74,6 +74,21 @@
   gap: var(--sp-2);
 }
 
+.offer-card__enrichment {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.offer-card__summary {
+  margin: 0;
+  color: var(--c-ink-700);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+}
+.offer-card__key-skills {
+  margin-top: 2px;
+}
+
 .offer-card__fit {
   display: flex;
   gap: var(--sp-3);
@@ -81,6 +96,12 @@
   padding: var(--sp-3);
   background: var(--c-paper-50);
   border-radius: var(--radius-md);
+}
+.offer-card__fit-rationale {
+  margin: 0;
+  color: var(--c-ink-700);
+  font-size: var(--fs-sm);
+  line-height: 1.4;
 }
 .offer-card__fit-score {
   font-size: var(--fs-xl);
@@ -134,6 +155,17 @@
   margin-left: auto;
 }
 
+.offer-card__application-note {
+  margin: 0;
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--c-paper-50);
+  border-radius: var(--radius-md);
+  color: var(--c-ink-700);
+  font-size: var(--fs-sm);
+  font-style: italic;
+  line-height: 1.4;
+}
+
 .offer-card__actions {
   display: flex;
   justify-content: space-between;
@@ -143,5 +175,7 @@
 }
 .offer-card__status-actions {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: var(--sp-2);
 }

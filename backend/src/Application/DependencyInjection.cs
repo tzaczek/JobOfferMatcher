@@ -1,4 +1,6 @@
+using JobOfferMatcher.Application.Backup;
 using JobOfferMatcher.Application.Cv;
+using JobOfferMatcher.Application.Enrichment;
 using JobOfferMatcher.Application.Export;
 using JobOfferMatcher.Application.Offers;
 using JobOfferMatcher.Application.Scanning;
@@ -16,9 +18,12 @@ public static class DependencyInjection
     {
         // Single-flight guard is process-wide → singleton (a DI singleton, not a static).
         services.AddSingleton<ScanConcurrencyGuard>();
+        // Backup/restore vs. writers coordination (003 ADR-3) — process-wide singleton beside the guard.
+        services.AddSingleton<MaintenanceGate>();
         services.AddScoped<RoleGroupingService>();
         services.AddScoped<IScanRunner, ScanOrchestrator>();
         services.AddScoped<SetUserOfferStatus>();
+        services.AddScoped<SetOfferApplication>();
         services.AddScoped<ScheduleService>();
         services.AddScoped<CvService>();
         services.AddScoped<ProfileService>();
@@ -26,6 +31,9 @@ public static class DependencyInjection
         services.AddScoped<SourceService>();
         services.AddScoped<RoleGroupService>();
         services.AddScoped<ExportService>();
+        services.AddScoped<EnrichmentService>();
+        services.AddScoped<BackupService>();
+        services.AddScoped<RestoreService>();
 
         return services;
     }

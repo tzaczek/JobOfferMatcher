@@ -9,6 +9,18 @@ vi.mock('../../src/api/offers.ts', () => ({
   setOfferStatus: vi.fn(),
 }))
 vi.mock('../../src/api/scans.ts', () => ({ runScan: vi.fn(), getScanStatus: vi.fn() }))
+vi.mock('../../src/api/enrichment.ts', () => ({
+  getEnrichmentStatus: vi.fn().mockResolvedValue({
+    pendingTotal: 0,
+    pendingProfiles: 0,
+    pendingSummaries: 0,
+    pendingFits: 0,
+    failedTotal: 0,
+    hasProducedProfile: false,
+    lastResultAt: null,
+  }),
+  triggerRerun: vi.fn(),
+}))
 vi.mock('../../src/api/sources.ts', () => ({ listSources: vi.fn().mockResolvedValue({ data: [] }) }))
 vi.mock('../../src/api/roleGroups.ts', () => ({ setRoleGroupOverride: vi.fn() }))
 
@@ -60,7 +72,10 @@ describe('"no new offers" state (T038b / FR-032)', () => {
   beforeEach(() => listOffers.mockReset())
 
   it('shows a clear caught-up message, not an error', async () => {
-    const empty: OffersResponse = { data: [], meta: { total: 5, new: 0, noReadableCv: true } }
+    const empty: OffersResponse = {
+      data: [],
+      meta: { total: 5, new: 0, hasProducedProfile: false, pendingEnrichment: 0, failedEnrichment: 0 },
+    }
     listOffers.mockResolvedValue(empty)
     render(<OffersPage />)
 

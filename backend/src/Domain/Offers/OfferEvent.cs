@@ -11,6 +11,8 @@ public enum OfferEventType
     BecameUnavailable,
     Reappeared,
     StatusChanged,
+    Applied,
+    ApplicationCleared,
 }
 
 /// <summary>

@@ -40,6 +40,36 @@ public sealed class UserStatusTests(PostgresFixture postgres)
     }
 
     [Fact]
+    public async Task Dismissed_offer_is_hidden_from_the_active_feed_and_returns_on_restore()
+    {
+        await postgres.ResetAsync();
+        var client = new MutableJustJoinItClient();
+        await using var factory = new JobApiFactory(postgres.ConnectionString, client);
+        var http = factory.CreateClient();
+
+        client.SetOffers(("keep-me", 22000), ("dismiss-me", 20000));
+        await RunScanAsync(http);
+
+        var toDismiss = (await GetOffersAsync(http, "all")).Single(o => o.Title == "Role dismiss-me");
+        var dismiss = await http.PostAsJsonAsync($"/api/offers/{toDismiss.OfferId}/status", new { status = "dismissed" });
+        dismiss.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+
+        // The default feed (active) hides the dismissed offer; the other one stays.
+        var active = await GetOffersAsync(http, "active");
+        active.ShouldNotContain(o => o.Title == "Role dismiss-me");
+        active.ShouldContain(o => o.Title == "Role keep-me");
+
+        // Restore (→ viewed) lifts it back into the active feed, but never back to "new" (SC-002).
+        var restore = await http.PostAsJsonAsync($"/api/offers/{toDismiss.OfferId}/status", new { status = "viewed" });
+        restore.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+
+        var restored = (await GetOffersAsync(http, "active")).Single(o => o.Title == "Role dismiss-me");
+        restored.UserStatus.ShouldBe("viewed");
+        restored.IsNew.ShouldBeFalse();
+        (await GetOffersAsync(http, "new")).ShouldNotContain(o => o.Title == "Role dismiss-me");
+    }
+
+    [Fact]
     public async Task Status_cannot_be_set_back_to_new()
     {
         await postgres.ResetAsync();

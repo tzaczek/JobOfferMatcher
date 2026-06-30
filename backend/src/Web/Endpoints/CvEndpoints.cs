@@ -83,7 +83,11 @@ internal static class CvEndpoints
         fileName = cv.FileName,
         isReadable = cv.IsReadable,
         extractedAt = cv.ExtractedAt,
-        skills = cv.DerivedProfile?.Skills.Select(s => s.DisplayName) ?? [],
-        seniority = cv.DerivedProfile?.Seniority.ToString(),
+        // AI profile (FR-005): un-produced CVs show pending/unreadable/failed — never a keyword fallback.
+        state = cv.ProfileState.ToString().ToLowerInvariant(),
+        summary = cv.Profile?.Summary,
+        skills = cv.Profile?.Skills ?? (IReadOnlyList<string>)[],
+        seniority = cv.Profile?.Seniority,
+        attemptCount = cv.ProfileAttempts,
     };
 }

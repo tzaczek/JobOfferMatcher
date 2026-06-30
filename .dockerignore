@@ -1,0 +1,23 @@
+# Keep the build context small and reproducible: never ship host build output,
+# dependencies, secrets, or personal data into the image (Principle IV).
+**/bin/
+**/obj/
+**/node_modules/
+frontend/dist/
+# The SPA is rebuilt inside the image; ignore any host-built wwwroot artifacts.
+backend/src/Web/wwwroot/
+.git/
+.vs/
+.idea/
+# Secrets / local config / personal data — must stay on the host.
+.env
+.env.*
+!.env.example
+cv/
+cv-data/
+*.dump
+*.trx
+TestResults/
+# Docs/specs are not needed to build the app.
+specs/
+docs/

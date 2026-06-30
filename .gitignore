@@ -5,6 +5,7 @@
 # ==========================================================================
 # CVs and any personal documents
 cv/
+cv-data/
 *.cv.pdf
 
 # Live database, dumps, and data exports
@@ -17,6 +18,11 @@ exports/
 export/
 *.export.json
 *.export.csv
+
+# On-demand backup/restore (003): server-side safety pre-backups + any downloaded
+# archive hold the full DB + CV PII unencrypted (FR-019, Principle IV) — never commit.
+backups/
+*backup*.zip
 
 # Secrets / local config
 .env

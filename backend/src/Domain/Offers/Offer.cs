@@ -48,6 +48,22 @@ public sealed class Offer
     public RoleGroupId? RoleGroupId { get; private set; }
     public UserOfferStatus UserStatus { get; private set; }
 
+    /// <summary>Longest free-text application note the Domain accepts (rejected past this — Principle III).</summary>
+    public const int MaxApplicationNoteLength = 2000;
+
+    /// <summary>
+    /// The user marked that they applied to this role. Orthogonal to <see cref="UserStatus"/> and
+    /// availability — an offer can be both "interested" and "applied". <see cref="AppliedAt"/> and
+    /// <see cref="ApplicationNote"/> are optional metadata, only meaningful while this is true.
+    /// </summary>
+    public bool Applied { get; private set; }
+
+    /// <summary>When the user applied, if they recorded a date (optional).</summary>
+    public DateTimeOffset? AppliedAt { get; private set; }
+
+    /// <summary>Free-text note about the application, if the user added one (optional).</summary>
+    public string? ApplicationNote { get; private set; }
+
     /// <summary>True when content changed since the user last acted — drives the "Updated" badge (FR-014).</summary>
     public bool HasUnseenUpdate { get; private set; }
 
@@ -122,6 +138,19 @@ public sealed class Offer
     }
 
     /// <summary>
+    /// Silently refresh the denormalized Minor-tier display fields (company/location/description) that
+    /// are NOT part of the Major fingerprint (ADR-3). Does not flag "updated", bump the version, or
+    /// emit an event — feature-001 new-vs-seen is unchanged (FR-013). The scan calls this on the
+    /// Unchanged branch so a description-only edit is persisted for the AI summary input hash (FR-006).
+    /// </summary>
+    public void RefreshMinorContent(OfferContent content)
+    {
+        Company = content.Company;
+        Location = content.Location;
+        DescriptionHtml = content.DescriptionHtml;
+    }
+
+    /// <summary>
     /// Apply a user-set disposition (FR-031). Rejects illegal transitions in the Domain via
     /// <see cref="Result"/> (Principle III): status is never set back to <see cref="UserOfferStatus.New"/>.
     /// Acting on an offer clears its unseen-update flag.
@@ -136,6 +165,44 @@ public sealed class Offer
         UserStatus = newStatus;
         HasUnseenUpdate = false;
         return Result.Success();
+    }
+
+    /// <summary>
+    /// Mark this offer as applied-to, with an optional <paramref name="appliedAt"/> date and optional
+    /// free-text <paramref name="note"/>. Re-marking overwrites both (used to edit them). The note is
+    /// trimmed and a blank one becomes null; an over-long note is rejected in the Domain (Principle III).
+    /// Leaves <see cref="UserStatus"/> and the unseen-update flag untouched — applying is a separate axis.
+    /// </summary>
+    public Result MarkApplied(DateTimeOffset? appliedAt, string? note)
+    {
+        var trimmed = string.IsNullOrWhiteSpace(note) ? null : note.Trim();
+        if (trimmed is { Length: > MaxApplicationNoteLength })
+        {
+            return new Error("ApplicationNoteTooLong", $"The application note cannot exceed {MaxApplicationNoteLength} characters.");
+        }
+
+        Applied = true;
+        AppliedAt = appliedAt;
+        ApplicationNote = trimmed;
+        return Result.Success();
+    }
+
+    /// <summary>
+    /// Clear the applied mark and its optional date/note (the user un-applies). Returns true only when
+    /// it actually transitioned, so the caller can skip appending a spurious timeline event when the
+    /// offer was never applied (event-deep idempotent).
+    /// </summary>
+    public bool ClearApplied()
+    {
+        if (!Applied)
+        {
+            return false;
+        }
+
+        Applied = false;
+        AppliedAt = null;
+        ApplicationNote = null;
+        return true;
     }
 
     public void AttachToRoleGroup(RoleGroupId roleGroupId) => RoleGroupId = roleGroupId;

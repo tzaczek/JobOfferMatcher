@@ -38,6 +38,12 @@
   background: linear-gradient(135deg, var(--c-brand-600), var(--c-accent-600));
 }
 
+.app-header__right {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
 .app-nav {
   display: flex;
   gap: var(--sp-1);

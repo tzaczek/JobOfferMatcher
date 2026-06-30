@@ -5,11 +5,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Editable skill catalog ships next to the app and is loaded at startup. -->
-    <None Update="Cv\skill-catalog.json" CopyToOutputDirectory="PreserveNewest" />
-  </ItemGroup>
-
-  <ItemGroup>
     <!-- Persistence -->
     <PackageReference Include="Microsoft.EntityFrameworkCore" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
@@ -19,10 +14,9 @@
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
     <!-- Scheduling -->
     <PackageReference Include="Cronos" />
-    <!-- CV extraction + fuzzy skill matching. PdfPig pinned exact in Directory.Packages.props. -->
+    <!-- CV readability gauge + text fallback. PdfPig pinned exact in Directory.Packages.props. -->
     <PackageReference Include="UglyToad.PdfPig" />
     <PackageReference Include="UglyToad.PdfPig.DocumentLayoutAnalysis" />
-    <PackageReference Include="FuzzySharp" />
     <!-- Polite HTTP retry/backoff for source collection -->
     <PackageReference Include="Polly" />
     <!-- HTML sanitization of source-supplied offer descriptions (XSS defense) -->

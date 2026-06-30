@@ -4,7 +4,27 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f8f9fc" />
     <title>Job Offer Matcher</title>
+    <!-- Apply the saved/system theme before first paint to avoid a flash of the
+         wrong theme. Mirrors the logic in src/theme/theme.ts. -->
+    <script>
+      ;(function () {
+        try {
+          var stored = localStorage.getItem('jom-theme')
+          var mode =
+            stored === 'light' || stored === 'dark'
+              ? stored
+              : window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+                ? 'dark'
+                : 'light'
+          document.documentElement.dataset.theme = mode
+          document
+            .querySelector('meta[name="theme-color"]')
+            .setAttribute('content', mode === 'dark' ? '#0e1016' : '#f8f9fc')
+        } catch (e) {}
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>

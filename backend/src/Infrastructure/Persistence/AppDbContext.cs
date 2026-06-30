@@ -1,5 +1,6 @@
 using JobOfferMatcher.Domain.Common.Ids;
 using JobOfferMatcher.Domain.Cv;
+using JobOfferMatcher.Domain.Enrichment;
 using JobOfferMatcher.Domain.Offers;
 using JobOfferMatcher.Domain.RoleGroups;
 using JobOfferMatcher.Domain.Scans;
@@ -28,6 +29,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<CandidateCv> CandidateCvs => Set<CandidateCv>();
     public DbSet<AppSettings> AppSettings => Set<AppSettings>();
     public DbSet<RoleGroup> RoleGroups => Set<RoleGroup>();
+    public DbSet<OfferEnrichment> OfferEnrichments => Set<OfferEnrichment>();
+    public DbSet<OfferFit> OfferFits => Set<OfferFit>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -20,7 +20,7 @@ function makeOffer(overrides: Partial<OfferDto> = {}): OfferDto {
     ],
     normalizedSalary: null,
     fit: null,
-    canonicalUrl: 'https://justjoin.it/job-offers/senior-dotnet-engineer-acme-krakow',
+    canonicalUrl: 'https://justjoin.it/job-offer/senior-dotnet-engineer-acme-krakow',
     isNew: true,
     isUpdated: false,
     availability: 'available',
@@ -56,7 +56,7 @@ describe('OfferCard (T023a)', () => {
     const link = screen.getByRole('link', { name: /view offer/i })
     expect(link).toHaveAttribute(
       'href',
-      'https://justjoin.it/job-offers/senior-dotnet-engineer-acme-krakow',
+      'https://justjoin.it/job-offer/senior-dotnet-engineer-acme-krakow',
     )
     expect(link).toHaveAttribute('target', '_blank')
   })
@@ -64,5 +64,32 @@ describe('OfferCard (T023a)', () => {
   it('shows the New badge for new offers', () => {
     render(<OfferCard offer={makeOffer({ isNew: true })} />)
     expect(screen.getByText('New')).toBeInTheDocument()
+  })
+})
+
+describe('OfferCard AI summary states (T034)', () => {
+  it('renders the produced summary and key skills', () => {
+    render(
+      <OfferCard
+        offer={makeOffer({
+          enrichmentState: 'produced',
+          summary: 'A remote-first senior .NET role building payment APIs.',
+          keySkills: ['C#', 'PostgreSQL'],
+        })}
+      />,
+    )
+    expect(screen.getByText('A remote-first senior .NET role building payment APIs.')).toBeInTheDocument()
+    // Key skills render as chips; PostgreSQL is unique to keySkills here.
+    expect(screen.getByText('PostgreSQL')).toBeInTheDocument()
+  })
+
+  it('shows "Summary pending" when not yet produced (never a fallback)', () => {
+    render(<OfferCard offer={makeOffer({ enrichmentState: 'pending', summary: null })} />)
+    expect(screen.getByText('Summary pending')).toBeInTheDocument()
+  })
+
+  it('shows "Summary unavailable" when failed', () => {
+    render(<OfferCard offer={makeOffer({ enrichmentState: 'failed', summary: null })} />)
+    expect(screen.getByText('Summary unavailable')).toBeInTheDocument()
   })
 })

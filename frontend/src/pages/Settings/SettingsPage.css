@@ -86,3 +86,25 @@
 .settings-note {
   margin-top: var(--sp-4);
 }
+
+/* Backup & Restore (003) */
+.settings-card__subtitle {
+  font-size: var(--fs-base);
+  font-weight: var(--fw-semibold);
+  color: var(--c-ink-900);
+}
+.settings-divider {
+  width: 100%;
+  border: none;
+  border-top: 1px solid var(--c-paper-200);
+  margin: 0;
+}
+.backup-summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.backup-summary ul {
+  margin: 0;
+  padding-left: var(--sp-4);
+}

@@ -28,9 +28,10 @@ namespace JobOfferMatcher.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
-                    b.Property<string>("DerivedProfile")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("derived_profile");
+                    b.Property<string>("EnrichmentInputHash")
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("enrichment_input_hash");
 
                     b.Property<DateTimeOffset?>("ExtractedAt")
                         .HasColumnType("timestamp with time zone")
@@ -46,9 +47,126 @@ namespace JobOfferMatcher.Infrastructure.Persistence.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("is_readable");
 
+                    b.Property<string>("Profile")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("profile");
+
+                    b.Property<int>("ProfileAttempts")
+                        .HasColumnType("integer")
+                        .HasColumnName("profile_attempts");
+
+                    b.Property<DateTimeOffset?>("ProfileProducedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("profile_produced_at");
+
+                    b.Property<string>("ProfileState")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("profile_state");
+
                     b.HasKey("Id");
 
                     b.ToTable("candidate_cv", (string)null);
+                });
+
+            modelBuilder.Entity("JobOfferMatcher.Domain.Enrichment.OfferEnrichment", b =>
+                {
+                    b.Property<Guid>("OfferId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("offer_id");
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("integer")
+                        .HasColumnName("attempts");
+
+                    b.Property<string>("InputsHash")
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("inputs_hash");
+
+                    b.Property<string>("KeySkills")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("key_skills");
+
+                    b.Property<string>("LastError")
+                        .HasColumnType("text")
+                        .HasColumnName("last_error");
+
+                    b.Property<DateTimeOffset?>("ProducedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("produced_at");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("state");
+
+                    b.Property<string>("Summary")
+                        .HasColumnType("text")
+                        .HasColumnName("summary");
+
+                    b.HasKey("OfferId");
+
+                    b.HasIndex("State");
+
+                    b.ToTable("offer_enrichment", (string)null);
+                });
+
+            modelBuilder.Entity("JobOfferMatcher.Domain.Enrichment.OfferFit", b =>
+                {
+                    b.Property<Guid>("OfferId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("offer_id");
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("integer")
+                        .HasColumnName("attempts");
+
+                    b.Property<string>("InputsHash")
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("inputs_hash");
+
+                    b.Property<string>("LastError")
+                        .HasColumnType("text")
+                        .HasColumnName("last_error");
+
+                    b.Property<string>("Matched")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("matched");
+
+                    b.Property<string>("Missing")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("missing");
+
+                    b.Property<DateTimeOffset?>("ProducedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("produced_at");
+
+                    b.Property<string>("Rationale")
+                        .HasColumnType("text")
+                        .HasColumnName("rationale");
+
+                    b.Property<int?>("Score")
+                        .HasColumnType("integer")
+                        .HasColumnName("score");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("state");
+
+                    b.HasKey("OfferId");
+
+                    b.HasIndex("State");
+
+                    b.ToTable("offer_fit", (string)null);
                 });
 
             modelBuilder.Entity("JobOfferMatcher.Domain.Offers.Offer", b =>
@@ -56,6 +174,19 @@ namespace JobOfferMatcher.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
                         .HasColumnName("id");
+
+                    b.Property<string>("ApplicationNote")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("application_note");
+
+                    b.Property<bool>("Applied")
+                        .HasColumnType("boolean")
+                        .HasColumnName("applied");
+
+                    b.Property<DateTimeOffset?>("AppliedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("applied_at");
 
                     b.Property<string>("Availability")
                         .IsRequired()
@@ -164,6 +295,8 @@ namespace JobOfferMatcher.Infrastructure.Persistence.Migrations
                         .HasColumnName("work_mode");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Applied");
 
                     b.HasIndex("LastSeenAt");
 
@@ -372,6 +505,11 @@ namespace JobOfferMatcher.Infrastructure.Persistence.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("id");
 
+                    b.Property<string>("Enrichment")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("enrichment");
+
                     b.Property<string>("Normalization")
                         .IsRequired()
                         .HasColumnType("jsonb")
@@ -428,6 +566,24 @@ namespace JobOfferMatcher.Infrastructure.Persistence.Migrations
                     b.HasIndex("Name");
 
                     b.ToTable("job_source", (string)null);
+                });
+
+            modelBuilder.Entity("JobOfferMatcher.Domain.Enrichment.OfferEnrichment", b =>
+                {
+                    b.HasOne("JobOfferMatcher.Domain.Offers.Offer", null)
+                        .WithOne()
+                        .HasForeignKey("JobOfferMatcher.Domain.Enrichment.OfferEnrichment", "OfferId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("JobOfferMatcher.Domain.Enrichment.OfferFit", b =>
+                {
+                    b.HasOne("JobOfferMatcher.Domain.Offers.Offer", null)
+                        .WithOne()
+                        .HasForeignKey("JobOfferMatcher.Domain.Enrichment.OfferFit", "OfferId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("JobOfferMatcher.Domain.Offers.Offer", b =>

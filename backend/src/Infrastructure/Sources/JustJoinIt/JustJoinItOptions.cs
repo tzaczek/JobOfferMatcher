@@ -11,7 +11,7 @@ public sealed class JustJoinItOptions
     public string ApiBaseUrl { get; set; } = "https://api.justjoin.it";
     public string ListPath { get; set; } = "/v2/user-panel/offers/by-cursor";
     public string DetailPath { get; set; } = "/v1/offers/{slug}";
-    public string SiteOfferUrlTemplate { get; set; } = "https://justjoin.it/job-offers/{slug}";
+    public string SiteOfferUrlTemplate { get; set; } = "https://justjoin.it/job-offer/{slug}";
 
     public int PageSize { get; set; } = 20;
 

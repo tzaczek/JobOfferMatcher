@@ -62,7 +62,12 @@ internal sealed class OfferConfiguration : IEntityTypeConfiguration<Offer>
         builder.Property(o => o.UserStatus).HasColumnName("user_status").HasConversion<string>().HasMaxLength(40);
         builder.Property(o => o.HasUnseenUpdate).HasColumnName("has_unseen_update");
 
+        builder.Property(o => o.Applied).HasColumnName("applied");
+        builder.Property(o => o.AppliedAt).HasColumnName("applied_at");
+        builder.Property(o => o.ApplicationNote).HasColumnName("application_note").HasMaxLength(Domain.Offers.Offer.MaxApplicationNoteLength);
+
         builder.HasIndex(o => o.LastSeenAt);
         builder.HasIndex(o => o.UserStatus);
+        builder.HasIndex(o => o.Applied);
     }
 }

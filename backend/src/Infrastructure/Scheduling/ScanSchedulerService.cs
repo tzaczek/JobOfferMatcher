@@ -16,6 +16,7 @@ namespace JobOfferMatcher.Infrastructure.Scheduling;
 public sealed class ScanSchedulerService(
     IServiceScopeFactory scopeFactory,
     ICronEvaluator cron,
+    MaintenanceGate maintenance,
     TimeProvider time,
     ILogger<ScanSchedulerService> logger) : BackgroundService
 {
@@ -45,6 +46,12 @@ public sealed class ScanSchedulerService(
 
     private async Task TickAsync(CancellationToken ct)
     {
+        // Pause scheduled scans while a restore is wiping/reloading the DB (FR-020) — retry next tick.
+        if (maintenance.IsMaintenanceActive)
+        {
+            return;
+        }
+
         await using var scope = scopeFactory.CreateAsyncScope();
         var schedules = scope.ServiceProvider.GetRequiredService<IScheduleRepository>();
         var runner = scope.ServiceProvider.GetRequiredService<IScanRunner>();

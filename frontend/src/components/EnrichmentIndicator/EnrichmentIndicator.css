@@ -1,0 +1,25 @@
+/* EnrichmentIndicator — all values reference design tokens (Principle VIII). */
+
+.enrichment-indicator {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2) var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--c-paper-50);
+  border: 1px solid var(--c-paper-200);
+  border-radius: var(--radius-md);
+}
+.enrichment-indicator__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+}
+.enrichment-indicator__hint {
+  flex: 1 1 auto;
+}
+.enrichment-indicator__actions {
+  display: flex;
+  gap: var(--sp-2);
+  margin-left: auto;
+}

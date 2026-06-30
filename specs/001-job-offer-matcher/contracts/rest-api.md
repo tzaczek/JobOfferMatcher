@@ -17,9 +17,11 @@ exceptions.
 
 ### `GET /api/offers`
 Query the current feed. Query params (all optional):
-`status` (`new|all|interested|dismissed|viewed`), `source`, `workMode`, `sort`
+`status` (`new|all|active|interested|dismissed|viewed`; `active` = every status except
+dismissed — the default feed), `source`, `workMode`, `sort`
 (`rank|salary|fit|recency`, default `rank`), `availability` (`available|all`),
-`q` (text). Returns the **role-grouped** feed (one entry per `RoleGroup`, with members).
+`q` (text), `applied` (`true|false` — keep only offers the user has / has not applied to).
+Returns the **role-grouped** feed (one entry per `RoleGroup`, with members).
 
 ```jsonc
 {
@@ -44,7 +46,10 @@ Query the current feed. Query params (all optional):
     "canonicalUrl": "https://justjoin.it/job-offers/…",
     "isNew": true, "availability": "available",
     "firstSeenAt": "…", "firstSuggestedAt": "…", "lastSeenAt": "…",
-    "userStatus": "new"
+    "userStatus": "new",
+    "applied": false,                        // user marked "I applied" (orthogonal to userStatus)
+    "appliedAt": null,                       // optional ISO-8601 date; null if not recorded
+    "applicationNote": null                  // optional free-text note (≤ 2000 chars)
   }],
   "meta": { "total": 177, "new": 12, "noReadableCv": false }
 }
@@ -56,6 +61,17 @@ Full offer incl. sanitized `descriptionHtml`, version history, and event timelin
 ### `POST /api/offers/{id}/status`
 Body `{ "status": "interested|dismissed|viewed" }`. Appends a `StatusChanged` event;
 `dismissed` persists across scans and never re-appears as new (FR-031/SC-002).
+
+### `PUT /api/offers/{id}/application`
+Mark the offer as applied-to (or edit the recorded date/note); idempotent on the flag.
+Body `{ "appliedAt": "2026-06-20"|null, "note": "…"|null }` — both optional (`appliedAt`
+ISO-8601; an invalid date → `400 InvalidDate`; a note over 2000 chars → `400
+ApplicationNoteTooLong`). Appends an `Applied` event. Orthogonal to `userStatus` and
+persists across scans. → `204`.
+
+### `DELETE /api/offers/{id}/application`
+Clear the applied flag and its date/note (un-apply). Appends an `ApplicationCleared`
+event. Idempotent. → `204`.
 
 ### `POST /api/role-groups/{id}/override`
 Body `{ "override": "same|notSame" }` — user correction to cross-source grouping (FR-016).

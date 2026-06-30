@@ -15,6 +15,7 @@ public sealed class AppSettings
     public SalaryNormalizationSettings Normalization { get; private set; } = new();
     public ScoringWeights Weights { get; private set; } = ScoringWeights.Default;
     public ProfilePreferences Preferences { get; private set; } = new();
+    public EnrichmentSettings Enrichment { get; private set; } = new();
 
     private AppSettings()
     {
@@ -28,4 +29,6 @@ public sealed class AppSettings
     public void UpdateWeights(ScoringWeights weights) => Weights = weights;
 
     public void UpdatePreferences(ProfilePreferences preferences) => Preferences = preferences;
+
+    public void UpdateEnrichment(EnrichmentSettings enrichment) => Enrichment = enrichment;
 }

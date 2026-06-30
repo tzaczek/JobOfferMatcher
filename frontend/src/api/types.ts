@@ -6,6 +6,11 @@ export type WorkMode = 'office' | 'remote' | 'hybrid' | string
 export type Availability = 'available' | 'no_longer_available'
 export type NormalizationQuality = 'Reported' | 'Estimated' | 'RoughEstimate'
 
+/** Lifecycle of an AI-derived output (offer summary / fit). Never a non-AI fallback (FR-005). */
+export type EnrichmentState = 'pending' | 'produced' | 'failed'
+/** CV profile lifecycle — adds `unreadable` (a content verdict, not a retry-exhausted failure). */
+export type CvProfileState = 'pending' | 'produced' | 'unreadable' | 'failed'
+
 export interface SalaryBandDto {
   min: number | null
   max: number | null
@@ -22,9 +27,12 @@ export interface NormalizedSalaryDto {
 }
 
 export interface FitDto {
-  score: number
-  matched: string[]
-  missing: string[]
+  /** Lifecycle. A numeric `score` is present ONLY under `produced` (FR-005). */
+  state: EnrichmentState
+  score?: number
+  matched?: string[]
+  missing?: string[]
+  rationale?: string | null
 }
 
 export interface OfferDto {
@@ -40,7 +48,16 @@ export interface OfferDto {
   niceToHaveSkills: string[]
   salaryBands: SalaryBandDto[]
   normalizedSalary: NormalizedSalaryDto | null
+  /** AI offer summary (≤ configured words); null until produced (FR-006). */
+  summary?: string | null
+  /** AI key skills (≤ configured count). */
+  keySkills?: string[]
+  /** Offer summary/skills lifecycle. */
+  enrichmentState?: EnrichmentState
+  /** Fit is null when there is NO current produced CV profile (no CV, or profile not produced). */
   fit: FitDto | null
+  /** Fit lifecycle mirror (matches `fit.state` when a produced profile exists). */
+  fitState?: EnrichmentState
   canonicalUrl: string
   isNew: boolean
   isUpdated: boolean
@@ -48,7 +65,15 @@ export interface OfferDto {
   firstSeenAt: string
   firstSuggestedAt: string | null
   lastSeenAt: string
+  /** Source-reported publish date (ISO-8601), when the source provides one. */
+  publishedAt?: string | null
   userStatus: UserStatus
+  /** The user marked that they applied to this role (orthogonal to userStatus). */
+  applied: boolean
+  /** When the user applied, if a date was recorded (ISO-8601); null otherwise. */
+  appliedAt?: string | null
+  /** Free-text note about the application, if one was added. */
+  applicationNote?: string | null
   /** Other offers grouped under the same role across sources (US4). */
   groupMembers?: OfferGroupMemberDto[]
 }
@@ -62,7 +87,12 @@ export interface OfferGroupMemberDto {
 export interface OffersMeta {
   total: number
   new: number
-  noReadableCv: boolean
+  /** A current produced CV profile exists (replaces `noReadableCv`; tracks the AI profile, not the gauge). */
+  hasProducedProfile: boolean
+  /** Offers whose summary/skills are pending (eligibility-gated). */
+  pendingEnrichment: number
+  /** Offers whose summary/skills failed (retries exhausted). */
+  failedEnrichment: number
 }
 
 export interface OffersResponse {
@@ -70,8 +100,8 @@ export interface OffersResponse {
   meta: OffersMeta
 }
 
-export type SortKey = 'rank' | 'salary' | 'fit' | 'recency'
-export type StatusFilter = 'new' | 'all' | 'interested' | 'dismissed' | 'viewed'
+export type SortKey = 'rank' | 'salary' | 'fit' | 'recency' | 'published'
+export type StatusFilter = 'new' | 'all' | 'active' | 'interested' | 'dismissed' | 'viewed'
 
 export interface OffersQuery {
   status?: StatusFilter
@@ -80,6 +110,14 @@ export interface OffersQuery {
   sort?: SortKey
   availability?: 'available' | 'all'
   q?: string
+  /** Keep only offers the user has (true) / has not (false) applied to. */
+  applied?: boolean
+}
+
+/** Payload for marking an offer applied — both fields optional (`appliedAt` ISO-8601). */
+export interface ApplicationInput {
+  appliedAt?: string | null
+  note?: string | null
 }
 
 export type ScanState =
@@ -168,16 +206,94 @@ export interface CvDto {
   fileName: string
   isReadable: boolean
   extractedAt: string | null
+  /** AI profile lifecycle (pending until the worker reads the PDF). */
+  state: CvProfileState
+  /** AI candidate summary; null until produced. */
+  summary?: string | null
   skills: string[]
   seniority: string | null
+  /** Failed-attempt count (drives the retry/error badge). */
+  attemptCount?: number
 }
+
+/** `GET /api/enrichment/status` — drives the pending/failed indicators (FR-010/SC-007). */
+export interface EnrichmentStatusDto {
+  pendingTotal: number
+  pendingProfiles: number
+  pendingSummaries: number
+  pendingFits: number
+  failedTotal: number
+  hasProducedProfile: boolean
+  lastResultAt: string | null
+}
+
+/** `GET`/`PUT /api/settings/enrichment` (FR-018). All caps soft; retryLimit drives Pending→Failed. */
+export interface EnrichmentSettingsDto {
+  offerSummaryMaxWords: number
+  cvSummaryMaxWords: number
+  maxKeySkills: number
+  fitRationaleMaxWords: number
+  retryLimit: number
+}
+
+export type RerunScope = 'failed' | 'all'
 
 export interface ProfileDto {
   skills: string[]
   seniority: string | null
+  /** AI candidate summary from the produced CV profile; null until produced. */
+  summary?: string | null
   salaryFloor: number | null
   salaryTarget: number | null
   preferredWorkModes: string[]
   preferredEmployment: string[]
-  hasReadableCv: boolean
+  /** A current produced CV profile exists (replaces `hasReadableCv`; tracks the AI profile, not the gauge). */
+  hasProducedProfile: boolean
+}
+
+// ---- Backup & Restore (003) -------------------------------------------------
+// Mirrors contracts/backup-api.md. The archive bundles the whole DB + CV files.
+
+/** How a backup's source schema relates to this build (FR-017). */
+export type BackupCompatibility = 'Same' | 'Older' | 'Newer'
+
+/** One table in the archive manifest: its name, explicit column list, and row count. */
+export interface BackupManifestTableDto {
+  name: string
+  columns: string[]
+  rowCount: number
+}
+
+/** `manifest.json` — the self-describing header of a backup archive. */
+export interface BackupManifestDto {
+  backupFormatVersion: number
+  createdAtUtc: string
+  appProductVersion: string
+  migrationTip: string
+  tables: BackupManifestTableDto[]
+  cvFiles: { name: string; size: number; sha256: string }[]
+  cvFileCount: number
+}
+
+/** `POST /api/backup/inspect` — verify a backup without restoring (US3, FR-005). */
+export interface BackupInspectionDto {
+  valid: boolean
+  createdAtUtc: string
+  appProductVersion: string
+  migrationTip: string
+  compatibility: BackupCompatibility
+  tableCounts: Record<string, number>
+  cvFileCount: number
+  totalCvBytes: number
+  warnings: string[]
+}
+
+/** `POST /api/backup/restore` success body (US2, FR-013). */
+export interface RestoreReportDto {
+  restoredAtUtc: string
+  compatibility: BackupCompatibility
+  tableCounts: Record<string, number>
+  cvFileCount: number
+  safetyBackupPath: string
+  backfillApplied: boolean
 }

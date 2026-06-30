@@ -1,5 +1,6 @@
 import { NavLink, Route, Routes } from 'react-router-dom'
 import './App.css'
+import { ThemeToggle } from './components/ThemeToggle/ThemeToggle.tsx'
 import { OffersPage } from './pages/Offers/OffersPage.tsx'
 import { ScansPage } from './pages/Scans/ScansPage.tsx'
 import { CvPage } from './pages/Cv/CvPage.tsx'
@@ -23,20 +24,23 @@ export function App() {
             <span className="app-brand__mark" aria-hidden="true" />
             <span className="app-brand__name">Job Offer Matcher</span>
           </div>
-          <nav className="app-nav" aria-label="Primary">
-            {NAV.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.end}
-                className={({ isActive }) =>
-                  isActive ? 'app-nav__link app-nav__link--active' : 'app-nav__link'
-                }
-              >
-                {item.label}
-              </NavLink>
-            ))}
-          </nav>
+          <div className="app-header__right">
+            <nav className="app-nav" aria-label="Primary">
+              {NAV.map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  end={item.end}
+                  className={({ isActive }) =>
+                    isActive ? 'app-nav__link app-nav__link--active' : 'app-nav__link'
+                  }
+                >
+                  {item.label}
+                </NavLink>
+              ))}
+            </nav>
+            <ThemeToggle />
+          </div>
         </div>
       </header>
 

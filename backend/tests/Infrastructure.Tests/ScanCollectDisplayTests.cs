@@ -28,7 +28,7 @@ public sealed class ScanCollectDisplayTests(PostgresFixture postgres)
 
         var acme = offers.Data.Single(o => o.Title == "Senior .NET Engineer");
         acme.Company.ShouldBe("Acme Software");
-        acme.CanonicalUrl.ShouldBe("https://justjoin.it/job-offers/senior-dotnet-engineer-acme-krakow");
+        acme.CanonicalUrl.ShouldBe("https://justjoin.it/job-offer/senior-dotnet-engineer-acme-krakow");
         acme.SalaryBands.Count.ShouldBe(2);
 
         // Offer with hidden salary still appears, marked unknown (empty bands) — FR-010.

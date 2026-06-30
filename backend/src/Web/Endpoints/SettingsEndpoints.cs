@@ -20,6 +20,13 @@ internal static class SettingsEndpoints
 
     public sealed record WeightsRequest(int Skills, int Seniority, int WorkMode, int Employment, int Salary);
 
+    public sealed record EnrichmentRequest(
+        int OfferSummaryMaxWords,
+        int CvSummaryMaxWords,
+        int MaxKeySkills,
+        int FitRationaleMaxWords,
+        int RetryLimit);
+
     public static IEndpointRouteBuilder MapSettingsEndpoints(this IEndpointRouteBuilder api)
     {
         var group = api.MapGroup("/settings");
@@ -66,8 +73,37 @@ internal static class SettingsEndpoints
             return result.ToHttp(() => Results.Ok(ToWeightsDto(weights)));
         });
 
+        group.MapGet("/enrichment", async (SettingsService settings, CancellationToken ct) =>
+        {
+            var e = (await settings.GetAsync(ct)).Enrichment;
+            return Results.Ok(ToEnrichmentDto(e));
+        });
+
+        group.MapPut("/enrichment", async (EnrichmentRequest body, SettingsService settings, CancellationToken ct) =>
+        {
+            var enrichment = new EnrichmentSettings
+            {
+                OfferSummaryMaxWords = body.OfferSummaryMaxWords,
+                CvSummaryMaxWords = body.CvSummaryMaxWords,
+                MaxKeySkills = body.MaxKeySkills,
+                FitRationaleMaxWords = body.FitRationaleMaxWords,
+                RetryLimit = body.RetryLimit,
+            };
+            var result = await settings.UpdateEnrichmentAsync(enrichment, ct);
+            return result.ToHttp(() => Results.Ok(ToEnrichmentDto(enrichment)));
+        });
+
         return api;
     }
+
+    private static object ToEnrichmentDto(EnrichmentSettings e) => new
+    {
+        offerSummaryMaxWords = e.OfferSummaryMaxWords,
+        cvSummaryMaxWords = e.CvSummaryMaxWords,
+        maxKeySkills = e.MaxKeySkills,
+        fitRationaleMaxWords = e.FitRationaleMaxWords,
+        retryLimit = e.RetryLimit,
+    };
 
     private static object ToNormalizationDto(SalaryNormalizationSettings s) => new
     {

@@ -1,0 +1,92 @@
+/* ApplyModal — centered dialog over a dimming backdrop. All values reference design tokens. */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-4);
+  background: rgba(20, 22, 31, 0.45);
+  animation: modal-fade var(--transition-fast);
+}
+
+.modal {
+  width: 100%;
+  max-width: 420px;
+  background: var(--c-paper-0);
+  border: 1px solid var(--c-paper-200);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: var(--sp-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  animation: modal-rise var(--transition-base);
+}
+
+.modal__title {
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+  color: var(--c-ink-900);
+}
+.modal__subtitle {
+  margin: 0;
+}
+
+.modal__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  color: var(--c-ink-700);
+}
+.modal__field input,
+.modal__field textarea {
+  font: inherit;
+  font-size: var(--fs-base);
+  font-weight: var(--fw-regular);
+  padding: var(--sp-2) var(--sp-3);
+  border: 1px solid var(--c-paper-300);
+  border-radius: var(--radius-md);
+  background: var(--c-paper-0);
+  color: var(--c-ink-900);
+}
+.modal__field textarea {
+  resize: vertical;
+  min-height: calc(var(--sp-7) + var(--sp-2));
+  line-height: var(--lh-normal);
+}
+.modal__field input:focus,
+.modal__field textarea:focus {
+  outline: 2px solid var(--c-brand-100);
+  border-color: var(--c-brand-500);
+}
+
+.modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sp-2);
+  margin-top: var(--sp-1);
+}
+
+@keyframes modal-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes modal-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modal-overlay,
+  .modal {
+    animation: none;
+  }
+}

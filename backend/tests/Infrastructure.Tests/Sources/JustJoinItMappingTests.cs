@@ -8,7 +8,7 @@ namespace JobOfferMatcher.Infrastructure.Tests.Sources;
 /// <summary>Contract test (T021): recorded LIST/DETAIL fixtures → CollectedOffer (offline).</summary>
 public sealed class JustJoinItMappingTests
 {
-    private const string SiteTemplate = "https://justjoin.it/job-offers/{slug}";
+    private const string SiteTemplate = "https://justjoin.it/job-offer/{slug}";
     private static readonly SourceId Source = SourceId.New();
 
     private static System.Text.Json.JsonElement FirstListItem()
@@ -34,7 +34,7 @@ public sealed class JustJoinItMappingTests
         offer.Content.WorkMode.ShouldBe(WorkMode.Remote);
         offer.Content.Seniority.ShouldBe("senior");
         offer.Content.Location.ShouldBe("Kraków");
-        offer.Content.CanonicalUrl.ShouldBe("https://justjoin.it/job-offers/senior-dotnet-engineer-acme-krakow");
+        offer.Content.CanonicalUrl.ShouldBe("https://justjoin.it/job-offer/senior-dotnet-engineer-acme-krakow");
         offer.Content.RequiredSkills.ShouldBe(["C#", ".NET", "Azure"]);
         offer.Content.NiceToHaveSkills.ShouldBe(["Kubernetes"]);
         offer.Content.PublishedAt.ShouldNotBeNull();

@@ -17,10 +17,25 @@ vi.mock('../../src/api/sources.ts', () => ({
 vi.mock('../../src/api/roleGroups.ts', () => ({
   setRoleGroupOverride: vi.fn(),
 }))
+vi.mock('../../src/api/enrichment.ts', () => ({
+  getEnrichmentStatus: vi.fn().mockResolvedValue({
+    pendingTotal: 0,
+    pendingProfiles: 0,
+    pendingSummaries: 0,
+    pendingFits: 0,
+    failedTotal: 0,
+    hasProducedProfile: false,
+    lastResultAt: null,
+  }),
+  triggerRerun: vi.fn(),
+}))
 
 import { OffersPage } from '../../src/pages/Offers/OffersPage.tsx'
 
-const EMPTY: OffersResponse = { data: [], meta: { total: 0, new: 0, noReadableCv: true } }
+const EMPTY: OffersResponse = {
+  data: [],
+  meta: { total: 0, new: 0, hasProducedProfile: false, pendingEnrichment: 0, failedEnrichment: 0 },
+}
 
 describe('OffersPage states (T023a)', () => {
   beforeEach(() => {

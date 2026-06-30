@@ -1,0 +1,249 @@
+{
+  "page": {
+    "number": 1,
+    "size": 50,
+    "count": 1
+  },
+  "offersCount": 4,
+  "offers": [
+    {
+      "id": "79620000-9298-b25a-a9cc-08dec6047dbe",
+      "groupId": "1ca4f098-e063-f111-8fcb-6045bdf5bd72",
+      "title": "Senior Dynamics 365 for Sales Technical Consultant",
+      "employer": "ITDS Polska Sp. z o.o.",
+      "offerUrlName": "senior-dynamics-365-for-sales-technical-consultant-krakow,oferta,79620000-9298-b25a-a9cc-08dec6047dbe",
+      "workplace": [
+        {
+          "location": "Kraków",
+          "city": "Kraków",
+          "region": "Lesser Poland"
+        }
+      ],
+      "positionLevels": [
+        {
+          "value": "senior"
+        }
+      ],
+      "typesOfContracts": [
+        {
+          "id": 0,
+          "salary": {
+            "from": 21700,
+            "to": 26100,
+            "currencySymbol": "zł",
+            "timeUnitId": 0,
+            "timeUnit": {
+              "shortForm": "mth.",
+              "longForm": "monthly"
+            },
+            "kindName": "gross"
+          }
+        },
+        {
+          "id": 3,
+          "salary": {
+            "from": 30240,
+            "to": 36330,
+            "currencySymbol": "zł",
+            "timeUnitId": 0,
+            "timeUnit": {
+              "shortForm": "mth.",
+              "longForm": "monthly"
+            },
+            "kindName": "net (+ VAT)"
+          }
+        }
+      ],
+      "technologies": [
+        "Microsoft Dynamics",
+        ".NET",
+        "C#",
+        "JavaScript",
+        "Microsoft Azure"
+      ],
+      "publicationDateUtc": "2026-06-09T08:52:50.103",
+      "language": "en",
+      "salary": {
+        "to": 36330,
+        "currency": "zł",
+        "timeUnit": {
+          "shortForm": "mth.",
+          "longForm": "monthly"
+        }
+      },
+      "workModes": [
+        "hybrid"
+      ]
+    },
+    {
+      "id": "32c90000-7e6c-d690-5d57-08dec0a9fa42",
+      "groupId": "a6f17315-865e-f111-8fcb-6045bdf5bd72",
+      "title": "Senior Fullstack .NET Engineer (C# / React / Azure)",
+      "employer": "SQUARE ONE RESOURCES sp. z o.o.",
+      "offerUrlName": "senior-fullstack-net-engineer-c---react---azure-warszawa,oferta,32c90000-7e6c-d690-5d57-08dec0a9fa42",
+      "workplace": [
+        {
+          "location": "Warszawa",
+          "city": "Warszawa",
+          "region": "mazowieckie"
+        }
+      ],
+      "positionLevels": [
+        {
+          "value": "senior"
+        }
+      ],
+      "typesOfContracts": [
+        {
+          "id": 3,
+          "salary": {
+            "from": 150,
+            "to": 170,
+            "currencySymbol": "zł",
+            "timeUnitId": 1,
+            "timeUnit": {
+              "shortForm": "godz.",
+              "longForm": "godzinowo"
+            },
+            "kindName": "netto (+ VAT)"
+          }
+        }
+      ],
+      "technologies": [
+        ".NET",
+        "C#",
+        "React",
+        "TypeScript",
+        "Azure",
+        "Docker",
+        "Azure DevOps"
+      ],
+      "publicationDateUtc": "2026-06-02T13:22:08.327",
+      "language": "pl",
+      "salary": {
+        "to": 170,
+        "currency": "zł",
+        "timeUnit": {
+          "shortForm": "godz.",
+          "longForm": "godzinowo"
+        }
+      },
+      "workModes": [
+        "zdalna"
+      ]
+    },
+    {
+      "id": "47a40000-59d6-3231-4168-08dec5ffdc85",
+      "groupId": "6e1f9bf2-db63-f111-8fcb-6045bdf5bd72",
+      "title": "Senior AI Engineer with .NET",
+      "employer": "YOUR ITEAMS sp. z o.o.",
+      "offerUrlName": "senior-ai-engineer-with-net-warszawa,oferta,47a40000-59d6-3231-4168-08dec5ffdc85",
+      "workplace": [
+        {
+          "location": "Warszawa",
+          "city": "Warszawa",
+          "region": "Masovian"
+        }
+      ],
+      "positionLevels": [
+        {
+          "value": "senior"
+        }
+      ],
+      "typesOfContracts": [
+        {
+          "id": 3,
+          "salary": {
+            "from": 180,
+            "to": 210,
+            "currencySymbol": "zł",
+            "timeUnitId": 1,
+            "timeUnit": {
+              "shortForm": "hr.",
+              "longForm": "hourly"
+            },
+            "kindName": "net (+ VAT)"
+          }
+        }
+      ],
+      "technologies": [
+        ".NET",
+        "C#",
+        "Azure AI Foundry"
+      ],
+      "publicationDateUtc": "2026-06-09T08:19:42.25",
+      "language": "en",
+      "salary": {
+        "to": 210,
+        "currency": "zł",
+        "timeUnit": {
+          "shortForm": "hr.",
+          "longForm": "hourly"
+        }
+      },
+      "workModes": [
+        "remote"
+      ]
+    },
+    {
+      "id": "8b070000-eede-f619-884e-08ded386f91d",
+      "groupId": "df754f14-6371-f111-ac9a-6045bd9f4d5b",
+      "title": "Senior Mobile Developer (.net)",
+      "employer": "BlueGecko",
+      "offerUrlName": "senior-mobile-developer-net-warszawa,oferta,8b070000-eede-f619-884e-08ded386f91d",
+      "workplace": [
+        {
+          "location": "Warszawa",
+          "city": "Warszawa",
+          "region": "Masovian"
+        }
+      ],
+      "positionLevels": [
+        {
+          "value": "senior"
+        },
+        {
+          "value": "expert"
+        }
+      ],
+      "typesOfContracts": [
+        {
+          "id": 0,
+          "salary": {
+            "from": 24000,
+            "to": 27000,
+            "currencySymbol": "zł",
+            "timeUnitId": 0,
+            "timeUnit": {
+              "shortForm": "mth.",
+              "longForm": "monthly"
+            },
+            "kindName": "gross"
+          }
+        }
+      ],
+      "technologies": [
+        ".NET",
+        "C#",
+        "REST APIs"
+      ],
+      "publicationDateUtc": "2026-06-26T13:29:37.187",
+      "language": "en",
+      "salary": {
+        "to": 27000,
+        "currency": "zł",
+        "timeUnit": {
+          "shortForm": "mth.",
+          "longForm": "monthly"
+        }
+      },
+      "workModes": [
+        "full office"
+      ]
+    }
+  ],
+  "orderBy": {
+    "field": "MaxSalary",
+    "direction": "desc"
+  }
+}
