@@ -20,6 +20,10 @@ exports/
 export/
 *.export.json
 *.export.csv
+# ...but Application/Export/ is SOURCE code, not a data-export dir — the case-insensitive
+# `export/` rule above hides its .cs files on Windows; keep it tracked (006).
+!/backend/src/Application/Export/
+!/backend/src/Application/Export/**
 
 # On-demand backup/restore (003): server-side safety pre-backups + any downloaded
 # archive hold the full DB + CV PII unencrypted (FR-019, Principle IV) — never commit.
