@@ -1,5 +1,5 @@
 import { api } from './client.ts'
-import type { ApplicationInput, OffersQuery, OffersResponse, UserStatus } from './types.ts'
+import type { ApplicationInput, OfferDetailDto, OffersQuery, OffersResponse, UserStatus } from './types.ts'
 
 export function listOffers(query: OffersQuery = {}, signal?: AbortSignal): Promise<OffersResponse> {
   const params = new URLSearchParams()
@@ -12,6 +12,11 @@ export function listOffers(query: OffersQuery = {}, signal?: AbortSignal): Promi
   if (query.applied != null) params.set('applied', String(query.applied))
   const qs = params.toString()
   return api.get<OffersResponse>(`/api/offers${qs ? `?${qs}` : ''}`, signal)
+}
+
+/** Full offer detail incl. the server-sanitised body + version/event history (US2). */
+export function getOfferDetail(offerId: string, signal?: AbortSignal): Promise<OfferDetailDto> {
+  return api.get<OfferDetailDto>(`/api/offers/${offerId}`, signal)
 }
 
 export function setOfferStatus(offerId: string, status: Exclude<UserStatus, 'new'>): Promise<void> {

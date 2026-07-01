@@ -24,9 +24,12 @@ public sealed class ExportServiceTests
         string? applicationStage = null,
         string? applicationStatus = null,
         string? applicationOutcome = null,
+        string? description = null,
+        int? affinityScore = null,
         IReadOnlyList<InterviewEventExport>? interviews = null) => new(
         Guid.NewGuid(), "justjoin.it", title, company, "Kraków", "Remote", "b2b", "senior",
         ["C#", ".NET"], [], [new SalaryBandExport(18000, 22000, "PLN", "monthly", "b2b", "net")],
+        description, affinityScore,
         "https://justjoin.it/job/x", "available", "new", applied, appliedAt, note, null,
         DateTimeOffset.UnixEpoch, DateTimeOffset.UnixEpoch, DateTimeOffset.UnixEpoch,
         applicationStage, applicationStatus, applicationOutcome, interviews ?? []);
@@ -84,6 +87,25 @@ public sealed class ExportServiceTests
         notAppliedJson.ShouldContain("\"applied\": false");
         notAppliedJson.ShouldContain("\"appliedAt\": null");
         notAppliedJson.ShouldContain("\"applicationNote\": null");
+    }
+
+    [Fact]
+    public async Task Export_includes_the_captured_body_and_the_current_affinity_score()
+    {
+        var row = Row(description: "<p>Full requirements &amp; stack.</p>", affinityScore: 74);
+
+        var csv = Encoding.UTF8.GetString((await Service(row).ExportAsync(ExportFormat.Csv)).Content);
+        csv.ShouldContain("description,affinityScore,canonicalUrl"); // header columns present, in order
+        csv.ShouldContain("74");
+
+        var json = Encoding.UTF8.GetString((await Service(row).ExportAsync(ExportFormat.Json)).Content);
+        json.ShouldContain("Full requirements");
+        json.ShouldContain("\"affinityScore\": 74");
+
+        // A row with no body / no produced affinity serializes both as null (never a fabricated value).
+        var bare = Encoding.UTF8.GetString((await Service(Row()).ExportAsync(ExportFormat.Json)).Content);
+        bare.ShouldContain("\"description\": null");
+        bare.ShouldContain("\"affinityScore\": null");
     }
 
     [Fact]

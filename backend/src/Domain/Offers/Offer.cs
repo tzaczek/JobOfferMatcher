@@ -151,6 +151,14 @@ public sealed class Offer
     }
 
     /// <summary>
+    /// Set the offer's body/description (feature 006, US2) — a <b>Minor-tier</b> mutator: it updates only
+    /// the denormalized <see cref="DescriptionHtml"/> and does NOT bump the fingerprint/version, emit an
+    /// event, or set <see cref="HasUnseenUpdate"/> (the same tier as <see cref="RefreshMinorContent"/>).
+    /// The scan captures the body here; the raw value is stored and sanitised at the read boundary.
+    /// </summary>
+    public void SetDescription(string? descriptionHtml) => DescriptionHtml = descriptionHtml;
+
+    /// <summary>
     /// Apply a user-set disposition (FR-031). Rejects illegal transitions in the Domain via
     /// <see cref="Result"/> (Principle III): status is never set back to <see cref="UserOfferStatus.New"/>.
     /// Acting on an offer clears its unseen-update flag.

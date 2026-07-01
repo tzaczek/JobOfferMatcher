@@ -22,6 +22,7 @@ internal static class EnrichmentDoubles
         CvProfileWorkItem => "cvProfile",
         OfferSummaryWorkItem => "offerSummary",
         OfferFitWorkItem => "offerFit",
+        OfferAffinityWorkItem => "offerAffinity",
         _ => "?",
     };
 
@@ -56,6 +57,14 @@ internal static class EnrichmentDoubles
 
     public static string SummaryHash(Offer offer) =>
         OfferEnrichmentInputs.Hash(offer.CurrentFingerprint.Hash, offer.Company, offer.Location, offer.DescriptionHtml).Serialized;
+
+    /// <summary>The current affinity input hash for a candidate against a set of applied offers (self excluded from the version).</summary>
+    public static string AffinityHash(Offer candidate, IReadOnlyList<Offer> applied)
+    {
+        var basisVersion = AppliedBasisInputs.Version([.. applied.Select(o => (o.Id, o.CurrentFingerprint.Hash))]);
+        var offerEnrichHash = OfferEnrichmentInputs.Hash(candidate.CurrentFingerprint.Hash, candidate.Company, candidate.Location, candidate.DescriptionHtml);
+        return OfferAffinityInputs.Hash(offerEnrichHash, basisVersion!).Serialized;
+    }
 }
 
 internal sealed class EnrichmentHarness
@@ -71,6 +80,7 @@ internal sealed class EnrichmentHarness
             Enrichment.Offers.Add(o);
             Enrichment.Enrichments[o.Id] = OfferEnrichment.CreatePending(o.Id);
             Enrichment.Fits[o.Id] = OfferFit.CreatePending(o.Id);
+            Enrichment.Affinities[o.Id] = OfferAffinity.CreatePending(o.Id);
         }
 
         Settings = AppSettings.CreateDefault();
@@ -93,12 +103,16 @@ internal sealed class FakeEnrichmentRepo : IEnrichmentRepository
     public List<Offer> Offers { get; } = [];
     public Dictionary<OfferId, OfferEnrichment> Enrichments { get; } = [];
     public Dictionary<OfferId, OfferFit> Fits { get; } = [];
+    public Dictionary<OfferId, OfferAffinity> Affinities { get; } = [];
 
     public Task<OfferEnrichment?> GetEnrichmentAsync(OfferId id, CancellationToken ct = default) =>
         Task.FromResult(Enrichments.GetValueOrDefault(id));
 
     public Task<OfferFit?> GetFitAsync(OfferId id, CancellationToken ct = default) =>
         Task.FromResult(Fits.GetValueOrDefault(id));
+
+    public Task<OfferAffinity?> GetAffinityAsync(OfferId id, CancellationToken ct = default) =>
+        Task.FromResult(Affinities.GetValueOrDefault(id));
 
     public Task AddEnrichmentAsync(OfferEnrichment e, CancellationToken ct = default)
     {
@@ -112,27 +126,48 @@ internal sealed class FakeEnrichmentRepo : IEnrichmentRepository
         return Task.CompletedTask;
     }
 
+    public Task AddAffinityAsync(OfferAffinity a, CancellationToken ct = default)
+    {
+        Affinities[a.OfferId] = a;
+        return Task.CompletedTask;
+    }
+
     public Task<IReadOnlyList<OfferWorkRow>> GetOfferWorkRowsAsync(CancellationToken ct = default) =>
         Task.FromResult<IReadOnlyList<OfferWorkRow>>(
-            Offers.Where(o => Enrichments.ContainsKey(o.Id) && Fits.ContainsKey(o.Id))
-                .Select(o => new OfferWorkRow(o, Enrichments[o.Id], Fits[o.Id]))
+            Offers.Where(o => Enrichments.ContainsKey(o.Id) && Fits.ContainsKey(o.Id) && Affinities.ContainsKey(o.Id))
+                .Select(o => new OfferWorkRow(o, Enrichments[o.Id], Fits[o.Id], Affinities[o.Id]))
                 .ToList());
 
-    public Task<SatelliteCounts> GetCountsAsync(bool countFits, CancellationToken ct = default) =>
+    public Task<SatelliteCounts> GetCountsAsync(bool countFits, bool countAffinity, CancellationToken ct = default) =>
         Task.FromResult(new SatelliteCounts(
             Enrichments.Values.Count(e => e.State == EnrichmentState.Pending),
             Enrichments.Values.Count(e => e.State == EnrichmentState.Failed),
             countFits ? Fits.Values.Count(f => f.State == EnrichmentState.Pending) : 0,
-            countFits ? Fits.Values.Count(f => f.State == EnrichmentState.Failed) : 0));
+            countFits ? Fits.Values.Count(f => f.State == EnrichmentState.Failed) : 0,
+            countAffinity ? Affinities.Values.Count(a => a.State == EnrichmentState.Pending) : 0,
+            countAffinity ? Affinities.Values.Count(a => a.State == EnrichmentState.Failed) : 0));
 
     public Task<DateTimeOffset?> GetLastResultAtAsync(CancellationToken ct = default) =>
         Task.FromResult<DateTimeOffset?>(null);
+
+    public Task<int> GetAppliedCountAsync(CancellationToken ct = default) =>
+        Task.FromResult(Offers.Count(o => o.Applied));
 
     public Task InvalidateAllFitsAsync(CancellationToken ct = default)
     {
         foreach (var f in Fits.Values)
         {
             f.Invalidate();
+        }
+
+        return Task.CompletedTask;
+    }
+
+    public Task InvalidateAllAffinityAsync(CancellationToken ct = default)
+    {
+        foreach (var a in Affinities.Values)
+        {
+            a.Invalidate();
         }
 
         return Task.CompletedTask;
@@ -150,6 +185,11 @@ internal sealed class FakeEnrichmentRepo : IEnrichmentRepository
             f.Rearm();
         }
 
+        foreach (var a in Affinities.Values)
+        {
+            a.Rearm();
+        }
+
         return Task.CompletedTask;
     }
 
@@ -163,6 +203,11 @@ internal sealed class FakeEnrichmentRepo : IEnrichmentRepository
         foreach (var f in Fits.Values)
         {
             f.ForcePending();
+        }
+
+        foreach (var a in Affinities.Values)
+        {
+            a.ForcePending();
         }
 
         return Task.CompletedTask;

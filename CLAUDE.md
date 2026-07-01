@@ -1,11 +1,12 @@
 <!-- SPECKIT START -->
-**Active feature**: `005-application-tracking` — Application & Interview Process Tracking.
+**Active feature**: `006-application-affinity-metric` — Application Affinity Metric & Offer Detail Body.
 For technologies, project structure, shell commands, and other context, read the current plan:
-`specs/005-application-tracking/plan.md` (with `research.md`, `data-model.md`, `contracts/`,
+`specs/006-application-affinity-metric/plan.md` (with `research.md`, `data-model.md`, `contracts/`,
 `quickstart.md` alongside it). Prior features: `001-job-offer-matcher` (collection/feed/scheduler),
 `002-llm-enrichment-matching` (LLM enrichment via a local Claude-Code worker), `003-backup-restore`
-(on-demand backup/restore), and `004-tailored-cv-generation` (per-offer tailored CV) — all delivered and
-preserved unchanged; plans at `specs/00{1,2,3,4}-*/plan.md`.
+(on-demand backup/restore), `004-tailored-cv-generation` (per-offer tailored CV), and
+`005-application-tracking` (application & interview process tracking) — all delivered and preserved
+unchanged; plans at `specs/00{1,2,3,4,5}-*/plan.md`.
 
 **Locked stack** (constitution v1.1.0): local-first, single-user **web app** — React (Vite,
 TypeScript) front end + **.NET 10** (ASP.NET Core) back end + **PostgreSQL** (EF Core,
@@ -74,4 +75,27 @@ by the completeness test); reuse `MaintenanceGate`. Clearing "applied" **prefers
 steer-to-Withdrawn); permanent delete is explicit + backup-recoverable. `/api/applications/*` is UI-local (no
 worker, no external AI call). See `specs/005-application-tracking/plan.md` ADR-1..ADR-5. Principles III/IV/IX
 upheld; **no existing data dropped or edited**.
+
+**Load-bearing decisions (006)**: add a **second per-offer match signal — "affinity"** (how closely an offer
+resembles the offers the user **applied to**), shown **beside** the unchanged CV **"fit"**; and **populate +
+display the offer body** (description/requirements) in-app. Affinity is an **`OfferFit` twin**: a new
+**`OfferAffinity` satellite** (PK `OfferId`, FK→`offers` cascade; `EnrichmentState`, `score`, jsonb
+`resembles`, `rationale`, `inputs_hash`) produced **only** by the local **`/enrich` worker** as a **4th
+`offerAffinity` kind on the existing kind-agnostic `/api/enrichment` queue** (backend makes **no** external
+AI call, **no** non-AI fallback — extends the 002 decision). Basis = **all applied offers, weighted equally**
+(outcome-agnostic); a pure `AppliedBasisInputs.Version` drives invalidation (**apply/un-apply → all affinity
+pending**, mirroring weights→fits); **cold-start gate at ≥3 applied offers** → read state `insufficient`
+(else produced/pending/failed via the `inputs_hash` recompute guard). Affinity is **orthogonal to fit and to
+the CV profile**; `OfferSort.Affinity` added; fit/002 behaviour unchanged (FR-016). The **offer body** reuses
+what already exists — the Minor-tier `offers.description_html` column, `IJustJoinItClient.FetchDetailAsync` +
+`WithDescription`, and read-time `Ganss.Xss` sanitisation in `OfferDetail`; the **only gap** is that scans
+never fetch it, so `IJobSource` gains **`FetchBodyAsync`** and the **`ScanOrchestrator` fetches the body
+eagerly for new/updated/body-missing offers** (not every offer every scan — respects 001 ADR-2), tolerating
+failures (null body → "not available"). **No data lost**: **ONE** table-only migration (`offer_affinity`;
+the body needs none); affinity rows are an invariant created at scan-upsert + **backfilled by extending the
+existing `BackfillEnrichmentAsync`** (startup AND older-restore via `IEnrichmentBackfill` — **no new port**);
+add `"offer_affinity"` to `BackupTables.InsertOrder` (guarded by the completeness test); export gains the
+captured body + current affinity score. Reuses `EnrichmentService`/`IEnrichmentRepository`, the `inputs_hash`
+guard, `/rerun`, `MaintenanceGate`, `LoopbackOnlyFilter`. See `specs/006-application-affinity-metric/plan.md`
+ADR-1..ADR-5. Principles III/IV/IX upheld; **no existing data dropped or edited**.
 <!-- SPECKIT END -->

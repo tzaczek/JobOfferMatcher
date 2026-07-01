@@ -33,6 +33,9 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<RoleGroup> RoleGroups => Set<RoleGroup>();
     public DbSet<OfferEnrichment> OfferEnrichments => Set<OfferEnrichment>();
     public DbSet<OfferFit> OfferFits => Set<OfferFit>();
+
+    // Affinity metric (006) — the OfferAffinity satellite (key OfferId), an OfferFit twin.
+    public DbSet<OfferAffinity> OfferAffinities => Set<OfferAffinity>();
     public DbSet<TailoredCv> TailoredCvs => Set<TailoredCv>();
 
     // Application tracking (005) — the JobApplication satellite (key OfferId) + its pipeline + 5 child tables.

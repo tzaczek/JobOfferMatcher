@@ -44,6 +44,14 @@ public sealed class EnrichmentService(
 
         var rows = await enrichment.GetOfferWorkRowsAsync(ct);
 
+        // Affinity basis (006): all applied offers, weighted equally. The version is null below the
+        // ≥3 cold-start gate → no affinity work is emitted/counted (mirrors "no produced profile → no fits").
+        var appliedRows = rows.Where(r => r.Offer.Applied).ToList();
+        var appliedBasis = appliedRows.Select(r => (r.Offer.Id, r.Offer.CurrentFingerprint.Hash)).ToList();
+        var basisVersion = AppliedBasisInputs.Version(appliedBasis);
+        var hasAffinityBasis = basisVersion is not null;
+        var appliedViews = appliedRows.Select(r => (r.Offer.Id, View: ToAppliedOfferView(r.Offer, settings))).ToList();
+
         var items = new List<object>();
 
         // (1) CV profiles FIRST (FR-019 profile-before-fit sequencing).
@@ -52,8 +60,8 @@ public sealed class EnrichmentService(
             items.Add(BuildCvProfileItem(cv, settings.Enrichment));
         }
 
-        // (2)+(3) summaries + fits, merged + ordered: available first, published DESC (date-less last),
-        // OfferId, then kind (summary before fit). The per-offer (summary, fit) emission realizes that key.
+        // (2)+(3)+(4) summaries + fits + affinity, merged + ordered: available first, published DESC
+        // (date-less last), OfferId, then kind (summary, fit, affinity). The per-offer emission realizes that key.
         var orderedOffers = rows
             .OrderBy(r => r.Offer.Availability == AvailabilityStatus.Available ? 0 : 1)
             .ThenByDescending(r => r.Offer.PublishedAt ?? DateTimeOffset.MinValue)
@@ -71,27 +79,37 @@ public sealed class EnrichmentService(
             {
                 items.Add(BuildFitItem(row.Offer, row.Fit, producedCv!.Profile!, effectiveProfileVersion!, settings));
             }
+
+            if (hasAffinityBasis && row.Affinity.State == EnrichmentState.Pending)
+            {
+                items.Add(BuildAffinityItem(row.Offer, basisVersion!, appliedViews, settings));
+            }
         }
 
         var page = items.Take(limit).ToList();
 
-        var counts = await enrichment.GetCountsAsync(hasProducedProfile, ct);
+        var counts = await enrichment.GetCountsAsync(hasProducedProfile, hasAffinityBasis, ct);
         var pendingProfiles = allCvs.Count(c => c.ProfileState == CvProcessingState.Pending);
         var failedProfiles = allCvs.Count(c => c.ProfileState == CvProcessingState.Failed);
         var meta = new PendingMeta(
-            PendingTotal: pendingProfiles + counts.PendingSummaries + counts.PendingFits,
+            PendingTotal: pendingProfiles + counts.PendingSummaries + counts.PendingFits + counts.PendingAffinity,
             PendingProfiles: pendingProfiles,
             PendingSummaries: counts.PendingSummaries,
             PendingFits: counts.PendingFits,
-            FailedTotal: failedProfiles + counts.FailedSummaries + counts.FailedFits,
+            FailedTotal: failedProfiles + counts.FailedSummaries + counts.FailedFits + counts.FailedAffinity,
             Returned: page.Count,
             HasProducedProfile: hasProducedProfile,
             Guidance: new WorkGuidance(
                 settings.Enrichment.OfferSummaryMaxWords,
                 settings.Enrichment.CvSummaryMaxWords,
                 settings.Enrichment.MaxKeySkills,
-                settings.Enrichment.FitRationaleMaxWords),
-            RetryLimit: Math.Max(1, settings.Enrichment.RetryLimit));
+                settings.Enrichment.FitRationaleMaxWords,
+                settings.Enrichment.AffinityRationaleMaxWords),
+            RetryLimit: Math.Max(1, settings.Enrichment.RetryLimit),
+            PendingAffinity: counts.PendingAffinity,
+            FailedAffinity: counts.FailedAffinity,
+            AppliedCount: appliedBasis.Count,
+            HasAffinityBasis: hasAffinityBasis);
 
         return new PendingWork(meta, page);
     }
@@ -100,7 +118,9 @@ public sealed class EnrichmentService(
     {
         var allCvs = await cvs.GetAllAsync(ct);
         var hasProducedProfile = allCvs.Any(c => c.HasProducedProfile);
-        var counts = await enrichment.GetCountsAsync(hasProducedProfile, ct);
+        var appliedCount = await enrichment.GetAppliedCountAsync(ct);
+        var hasAffinityBasis = appliedCount >= OfferAffinity.MinApplications;
+        var counts = await enrichment.GetCountsAsync(hasProducedProfile, hasAffinityBasis, ct);
         var pendingProfiles = allCvs.Count(c => c.ProfileState == CvProcessingState.Pending);
         var failedProfiles = allCvs.Count(c => c.ProfileState == CvProcessingState.Failed);
 
@@ -108,13 +128,17 @@ public sealed class EnrichmentService(
         var lastCv = allCvs.Select(c => c.ProfileProducedAt).DefaultIfEmpty(null).Max();
 
         return new EnrichmentStatusView(
-            PendingTotal: pendingProfiles + counts.PendingSummaries + counts.PendingFits,
+            PendingTotal: pendingProfiles + counts.PendingSummaries + counts.PendingFits + counts.PendingAffinity,
             PendingProfiles: pendingProfiles,
             PendingSummaries: counts.PendingSummaries,
             PendingFits: counts.PendingFits,
-            FailedTotal: failedProfiles + counts.FailedSummaries + counts.FailedFits,
+            FailedTotal: failedProfiles + counts.FailedSummaries + counts.FailedFits + counts.FailedAffinity,
             HasProducedProfile: hasProducedProfile,
-            LastResultAt: new[] { lastSatellite, lastCv }.Max());
+            LastResultAt: new[] { lastSatellite, lastCv }.Max(),
+            PendingAffinity: counts.PendingAffinity,
+            FailedAffinity: counts.FailedAffinity,
+            AppliedCount: appliedCount,
+            HasAffinityBasis: hasAffinityBasis);
     }
 
     public async Task<SubmitResultsResponse> SubmitResultsAsync(SubmitResultsRequest request, CancellationToken ct = default)
@@ -134,12 +158,18 @@ public sealed class EnrichmentService(
             ? EffectiveProfile.Version(producedCv.Profile!, settings.Preferences)
             : (InputHash?)null;
 
-        var offersById = (await enrichment.GetOfferWorkRowsAsync(ct)).ToDictionary(r => r.Offer.Id, r => r.Offer);
+        var rows = await enrichment.GetOfferWorkRowsAsync(ct);
+        var offersById = rows.ToDictionary(r => r.Offer.Id, r => r.Offer);
+
+        // Affinity basis version recomputed from live inputs (006): the write-back stale guard for the
+        // affinity kind. Null below the ≥3 gate → an affinity write-back is rejected as stale.
+        var appliedBasis = rows.Where(r => r.Offer.Applied).Select(r => (r.Offer.Id, r.Offer.CurrentFingerprint.Hash)).ToList();
+        var basisVersion = AppliedBasisInputs.Version(appliedBasis);
 
         var outcomes = new List<ResultOutcomeView>();
         foreach (var item in results)
         {
-            outcomes.Add(await HandleResultAsync(item, offersById, allCvs, effectiveProfileVersion, settings, retryLimit, now, ct));
+            outcomes.Add(await HandleResultAsync(item, offersById, allCvs, effectiveProfileVersion, basisVersion, settings, retryLimit, now, ct));
         }
 
         await unitOfWork.SaveChangesAsync(ct);
@@ -253,6 +283,42 @@ public sealed class EnrichmentService(
             Guidance: new { rationaleWords = settings.Enrichment.FitRationaleMaxWords });
     }
 
+    private OfferAffinityWorkItem BuildAffinityItem(
+        Offer offer,
+        InputHash basisVersion,
+        IReadOnlyList<(OfferId Id, AppliedOfferView View)> appliedViews,
+        AppSettings settings)
+    {
+        var offerEnrichHash = OfferEnrichmentInputs.Hash(offer.CurrentFingerprint.Hash, offer.Company, offer.Location, offer.DescriptionHtml);
+        var inputsHash = OfferAffinityInputs.Hash(offerEnrichHash, basisVersion).Serialized;
+        // Exclude the candidate from its OWN basis (no trivial self-match) — the version stays global (006 ADR-2).
+        var basis = appliedViews.Where(a => a.Id != offer.Id).Select(a => a.View).ToList();
+
+        return new OfferAffinityWorkItem(
+            OfferId: offer.Id.Value,
+            InputsHash: inputsHash,
+            Attempt: 1,
+            Offer: new AffinityOfferView(
+                Title: offer.Title,
+                RequiredSkills: [.. offer.RequiredSkills],
+                NiceToHaveSkills: [.. offer.NiceToHaveSkills],
+                Seniority: offer.Seniority,
+                WorkMode: offer.WorkMode == WorkMode.Unknown ? null : offer.WorkMode.ToString(),
+                EmploymentType: offer.EmploymentType,
+                NormalizedMonthlySalary: NormalizedMonthly(offer, settings)),
+            AppliedBasis: basis,
+            Guidance: new { rationaleWords = settings.Enrichment.AffinityRationaleMaxWords });
+    }
+
+    private AppliedOfferView ToAppliedOfferView(Offer offer, AppSettings settings) => new(
+        Title: offer.Title,
+        RequiredSkills: [.. offer.RequiredSkills],
+        NiceToHaveSkills: [.. offer.NiceToHaveSkills],
+        Seniority: offer.Seniority,
+        WorkMode: offer.WorkMode == WorkMode.Unknown ? null : offer.WorkMode.ToString(),
+        EmploymentType: offer.EmploymentType,
+        NormalizedMonthlySalary: NormalizedMonthly(offer, settings));
+
     // ---- Per-kind write-back (recompute guard + validation + state machine) --------------------
 
     private async Task<ResultOutcomeView> HandleResultAsync(
@@ -260,6 +326,7 @@ public sealed class EnrichmentService(
         IReadOnlyDictionary<OfferId, Offer> offersById,
         IReadOnlyList<CandidateCv> allCvs,
         InputHash? effectiveProfileVersion,
+        InputHash? appliedBasisVersion,
         AppSettings settings,
         int retryLimit,
         DateTimeOffset now,
@@ -370,6 +437,39 @@ public sealed class EnrichmentService(
 
             f.RecordFailure(item.Reason ?? "invalid fit payload", retryLimit);
             return new ResultOutcomeView(workItemId, f.State == EnrichmentState.Failed ? "failed" : "pendingRetry", f.Attempts, f.State.ToString());
+        }
+
+        // offerAffinity -------------------------------------------------------------------------
+        if (sub == "affinity")
+        {
+            var a = await enrichment.GetAffinityAsync(offer.Id, ct);
+            if (a is null)
+            {
+                return new ResultOutcomeView(workItemId, "unknown", 0, "");
+            }
+
+            // Below the ≥3 gate ⇒ affinity isn't eligible ⇒ the echoed hash can't match.
+            if (appliedBasisVersion is null)
+            {
+                return new ResultOutcomeView(workItemId, "stale", a.Attempts, a.State.ToString());
+            }
+
+            var current = OfferAffinityInputs.Hash(offerEnrichHash, appliedBasisVersion).Serialized;
+            if (item.InputsHash != current)
+            {
+                return new ResultOutcomeView(workItemId, "stale", a.Attempts, a.State.ToString());
+            }
+
+            var validProduced = string.Equals(item.Status, "produced", StringComparison.OrdinalIgnoreCase)
+                && item.Score is >= 0 and <= 100;
+            if (validProduced)
+            {
+                a.MarkProduced(item.Score!.Value, item.Resembles ?? [], item.Rationale, current, now);
+                return new ResultOutcomeView(workItemId, "produced", 0, a.State.ToString());
+            }
+
+            a.RecordFailure(item.Reason ?? "invalid affinity payload", retryLimit);
+            return new ResultOutcomeView(workItemId, a.State == EnrichmentState.Failed ? "failed" : "pendingRetry", a.Attempts, a.State.ToString());
         }
 
         return new ResultOutcomeView(workItemId, "unknown", 0, "");

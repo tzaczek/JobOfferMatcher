@@ -22,6 +22,20 @@
   font-weight: var(--fw-semibold);
   color: var(--c-ink-900);
 }
+/* The title doubles as an open-detail trigger when the drawer is wired (US2). */
+.offer-card__title-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+.offer-card__title-btn:hover {
+  color: var(--c-accent-500, var(--c-ink-900));
+  text-decoration: underline;
+}
 .offer-card__company {
   color: var(--c-ink-500);
   font-size: var(--fs-sm);
@@ -118,6 +132,36 @@
   display: flex;
   flex-direction: column;
   gap: var(--sp-1);
+}
+
+/* Affinity — a distinct second signal beside fit (feature 006), same layout, own accent border. */
+.offer-card__affinity {
+  display: flex;
+  gap: var(--sp-3);
+  align-items: flex-start;
+  padding: var(--sp-3);
+  background: var(--c-paper-50);
+  border-left: 3px solid var(--c-accent-400, var(--c-ink-300));
+  border-radius: var(--radius-md);
+}
+.offer-card__affinity-score {
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-bold);
+  white-space: nowrap;
+}
+.offer-card__affinity-max {
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  color: var(--c-ink-400);
+  margin-left: 2px;
+}
+.offer-card__affinity-lists {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+.offer-card__affinity-insufficient {
+  font-style: italic;
 }
 .offer-card__chips,
 .offer-card__skills {

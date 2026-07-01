@@ -11,6 +11,12 @@ public sealed record EnrichmentSettings
     public int CvSummaryMaxWords { get; init; } = 60;
     public int MaxKeySkills { get; init; } = 10;
     public int FitRationaleMaxWords { get; init; } = 30;
+
+    /// <summary>
+    /// Soft cap on the affinity rationale (feature 006). Additive field — no migration: the existing
+    /// <c>enrichment</c> jsonb has no key for it, so existing rows deserialize this default.
+    /// </summary>
+    public int AffinityRationaleMaxWords { get; init; } = 30;
     public int RetryLimit { get; init; } = 3;
 
     public static EnrichmentSettings Default => new();

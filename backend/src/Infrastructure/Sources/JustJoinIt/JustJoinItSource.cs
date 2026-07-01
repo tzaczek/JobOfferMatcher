@@ -91,6 +91,49 @@ public sealed class JustJoinItSource(
         return CollectionResult.Complete(collected);
     }
 
+    /// <summary>
+    /// Fetch the offer's DETAIL body (feature 006, US2) via the existing detail endpoint + mapper. The
+    /// slug is the last segment of the canonical site URL (built from the slug during list mapping).
+    /// Resilient: any failure/block returns null (the orchestrator tolerates a null body).
+    /// </summary>
+    public async Task<string?> FetchBodyAsync(CollectedOffer offer, CancellationToken ct)
+    {
+        var slug = ExtractSlug(offer.Content.CanonicalUrl);
+        if (slug is null)
+        {
+            return null;
+        }
+
+        try
+        {
+            var detail = await client.FetchDetailAsync(slug, ct);
+            if (detail is null)
+            {
+                return null;
+            }
+
+            return JustJoinItMapper.WithDescription(offer, detail.Value).Content.DescriptionHtml;
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            logger.LogWarning(ex, "justjoin.it body fetch failed for slug {Slug}.", slug);
+            return null;
+        }
+    }
+
+    /// <summary>The slug is the final path segment of the canonical URL (siteUrlTemplate's <c>{slug}</c> slot).</summary>
+    private static string? ExtractSlug(string canonicalUrl)
+    {
+        if (string.IsNullOrWhiteSpace(canonicalUrl))
+        {
+            return null;
+        }
+
+        var trimmed = canonicalUrl.TrimEnd('/');
+        var idx = trimmed.LastIndexOf('/');
+        return idx >= 0 && idx < trimmed.Length - 1 ? trimmed[(idx + 1)..] : null;
+    }
+
     private async Task<bool> TryEmitAsync(
         JsonElement item,
         JobSourceSearch search,

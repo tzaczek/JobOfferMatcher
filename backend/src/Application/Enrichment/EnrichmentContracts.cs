@@ -7,7 +7,7 @@ namespace JobOfferMatcher.Application.Enrichment;
 // its runtime type (discriminated by the get-only `Kind`).
 
 /// <summary>Soft caps echoed to the worker (from <c>EnrichmentSettings</c>).</summary>
-public sealed record WorkGuidance(int OfferSummaryWords, int CvSummaryWords, int MaxKeySkills, int RationaleWords);
+public sealed record WorkGuidance(int OfferSummaryWords, int CvSummaryWords, int MaxKeySkills, int RationaleWords, int AffinityRationaleWords);
 
 public sealed record PendingMeta(
     int PendingTotal,
@@ -18,7 +18,12 @@ public sealed record PendingMeta(
     int Returned,
     bool HasProducedProfile,
     WorkGuidance Guidance,
-    int RetryLimit);
+    int RetryLimit,
+    // Affinity (006) — pending/failed are gated on the ≥3 applied-offer basis.
+    int PendingAffinity,
+    int FailedAffinity,
+    int AppliedCount,
+    bool HasAffinityBasis);
 
 public sealed record PendingWork(PendingMeta Meta, IReadOnlyList<object> Items);
 
@@ -83,6 +88,40 @@ public sealed record OfferFitWorkItem(
     public string WorkItemId => $"offer:{OfferId}:fit";
 }
 
+// ---- Affinity (006) — a 4th kind on the same loopback queue -------------------------------------
+
+/// <summary>The candidate offer's compared attributes (mirrors <see cref="FitOfferView"/>'s shape).</summary>
+public sealed record AffinityOfferView(
+    string Title,
+    IReadOnlyList<string> RequiredSkills,
+    IReadOnlyList<string> NiceToHaveSkills,
+    string? Seniority,
+    string? WorkMode,
+    string? EmploymentType,
+    decimal? NormalizedMonthlySalary);
+
+/// <summary>One offer in the applied basis (self excluded), same attribute shape as the candidate.</summary>
+public sealed record AppliedOfferView(
+    string Title,
+    IReadOnlyList<string> RequiredSkills,
+    IReadOnlyList<string> NiceToHaveSkills,
+    string? Seniority,
+    string? WorkMode,
+    string? EmploymentType,
+    decimal? NormalizedMonthlySalary);
+
+public sealed record OfferAffinityWorkItem(
+    Guid OfferId,
+    string InputsHash,
+    int Attempt,
+    AffinityOfferView Offer,
+    IReadOnlyList<AppliedOfferView> AppliedBasis,
+    object Guidance)
+{
+    public string Kind => "offerAffinity";
+    public string WorkItemId => $"offer:{OfferId}:affinity";
+}
+
 // ---- Result write-back (POST /results) --------------------------------------------------------
 
 public sealed record EnrichmentResultItem(
@@ -98,6 +137,8 @@ public sealed record EnrichmentResultItem(
     IReadOnlyList<string>? Matched = null,
     IReadOnlyList<string>? Missing = null,
     string? Rationale = null,
+    // offerAffinity (Score + Rationale reused)
+    IReadOnlyList<string>? Resembles = null,
     // cvProfile (Summary reused)
     IReadOnlyList<string>? Skills = null,
     string? Seniority = null,
@@ -119,4 +160,9 @@ public sealed record EnrichmentStatusView(
     int PendingFits,
     int FailedTotal,
     bool HasProducedProfile,
-    DateTimeOffset? LastResultAt);
+    DateTimeOffset? LastResultAt,
+    // Affinity (006).
+    int PendingAffinity,
+    int FailedAffinity,
+    int AppliedCount,
+    bool HasAffinityBasis);

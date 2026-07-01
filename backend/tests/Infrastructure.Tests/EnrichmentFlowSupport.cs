@@ -36,6 +36,15 @@ internal static class EnrichmentFlow
         db.Offers.Add(offer);
         db.OfferEnrichments.Add(OfferEnrichment.CreatePending(offer.Id));
         db.OfferFits.Add(OfferFit.CreatePending(offer.Id));
+        db.OfferAffinities.Add(OfferAffinity.CreatePending(offer.Id));
+        return offer;
+    }
+
+    /// <summary>Seed an offer that the user has already applied to (for the affinity basis), with satellites.</summary>
+    public static Offer AddAppliedOfferWithSatellites(AppDbContext db, string nativeKey, string description = "<p>Build things.</p>")
+    {
+        var offer = AddOfferWithSatellites(db, nativeKey, description);
+        offer.MarkApplied(new DateTimeOffset(2026, 6, 25, 8, 0, 0, TimeSpan.Zero), null);
         return offer;
     }
 
@@ -59,9 +68,21 @@ internal static class EnrichmentFlow
         int PendingSummaries,
         int PendingFits,
         int FailedTotal,
-        bool HasProducedProfile);
+        bool HasProducedProfile,
+        int PendingAffinity,
+        int FailedAffinity,
+        int AppliedCount,
+        bool HasAffinityBasis);
 
-    public sealed record PendingItemDto(string Kind, string WorkItemId, string InputsHash, Guid? OfferId, Guid? CvId);
+    public sealed record PendingItemDto(
+        string Kind,
+        string WorkItemId,
+        string InputsHash,
+        Guid? OfferId,
+        Guid? CvId,
+        List<AppliedOfferDto>? AppliedBasis = null);
+
+    public sealed record AppliedOfferDto(string Title);
 
     public sealed record StatusDto(
         int PendingTotal,
@@ -70,7 +91,11 @@ internal static class EnrichmentFlow
         int PendingFits,
         int FailedTotal,
         bool HasProducedProfile,
-        DateTimeOffset? LastResultAt);
+        DateTimeOffset? LastResultAt,
+        int PendingAffinity,
+        int FailedAffinity,
+        int AppliedCount,
+        bool HasAffinityBasis);
 
     public sealed record SubmitEnvelope(int Accepted, int Rejected, List<OutcomeDto> Results);
 
@@ -78,17 +103,31 @@ internal static class EnrichmentFlow
 
     public sealed record OffersEnvelope(List<OfferItem> Data, OffersMetaDto Meta);
 
-    public sealed record OffersMetaDto(int Total, int New, bool HasProducedProfile, int PendingEnrichment, int FailedEnrichment);
+    public sealed record OffersMetaDto(
+        int Total,
+        int New,
+        bool HasProducedProfile,
+        int PendingEnrichment,
+        int FailedEnrichment,
+        int PendingAffinity,
+        int FailedAffinity,
+        int AppliedCount,
+        bool HasAffinityBasis);
 
     public sealed record OfferItem(
+        string OfferId,
         string Title,
         string EnrichmentState,
         string? Summary,
         List<string> KeySkills,
         FitItem? Fit,
-        string? FitState);
+        string? FitState,
+        AffinityItem? Affinity,
+        string AffinityState);
 
     public sealed record FitItem(string State, int? Score, List<string> Matched, List<string> Missing, string? Rationale);
+
+    public sealed record AffinityItem(string State, int? Score, List<string> Resembles, string? Rationale);
 
     public sealed record CvEnvelope(List<CvItem> Data);
 

@@ -89,6 +89,23 @@ normalizedMonthlySalary). `item.weights` (skills/seniority/workMode/employment/s
 Return `status: "produced"` with `score` + `matched` + `missing` + `rationale`. If the offer or profile
 is too sparse to judge at all, return `status: "failed"` with a short `reason` (never fabricate a score).
 
+### kind: `offerAffinity`
+
+Score how closely **this candidate offer** (`item.offer`: title, requiredSkills, niceToHaveSkills,
+seniority, workMode, employmentType, normalizedMonthlySalary) **resembles the offers the user has
+applied to** (`item.appliedBasis`: the same attribute shape, one entry per applied offer — the candidate
+itself is already excluded). This is a DISTINCT signal from `offerFit`: it compares offer-to-offers, not
+offer-to-CV. All applied offers weigh equally (outcome-agnostic).
+
+- `score`: an integer `0..100` — how much the candidate looks like the set the user applies to (title
+  family, stack overlap, seniority, work mode, employment type, salary band). Higher = more similar.
+- `resembles`: the applied roles/attributes the candidate is closest to (e.g. `["senior .NET","remote","B2B"]`).
+- `rationale`: one line, ≤ `guidance.rationaleWords` words, explaining what makes it (dis)similar.
+
+Return `status: "produced"` with `score` + `resembles` + `rationale`. If the candidate or the basis is
+too sparse to judge, return `status: "failed"` with a short `reason` (never fabricate a score). Note: the
+server only emits `offerAffinity` items once at least 3 offers are applied, so a basis always exists here.
+
 ## Result object shapes
 
 ```jsonc
@@ -101,6 +118,9 @@ is too sparse to judge at all, return `status: "failed"` with a short `reason` (
 // offerFit
 { "workItemId": "...", "kind": "offerFit", "inputsHash": "<echo>",
   "status": "produced", "score": 82, "matched": ["…"], "missing": ["…"], "rationale": "…" }
+// offerAffinity
+{ "workItemId": "...", "kind": "offerAffinity", "inputsHash": "<echo>",
+  "status": "produced", "score": 74, "resembles": ["senior .NET","remote","B2B"], "rationale": "…" }
 // any kind, un-producible:
 { "workItemId": "...", "kind": "<kind>", "inputsHash": "<echo>", "status": "failed", "reason": "…" }
 ```

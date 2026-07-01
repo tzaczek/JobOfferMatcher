@@ -23,6 +23,8 @@ interface OfferCardProps {
   applicationStageName?: string
   /** Open the application detail drawer for this offer (shown when applied). */
   onOpenApplication?: (offerId: string) => void
+  /** Open the offer-detail drawer (full body + facts) — US2. */
+  onOpenDetail?: (offerId: string) => void
 }
 
 export function OfferCard({
@@ -35,6 +37,7 @@ export function OfferCard({
   onTailoredChanged,
   applicationStageName,
   onOpenApplication,
+  onOpenDetail,
 }: OfferCardProps) {
   const hasSalary = offer.salaryBands.length > 0
   const groupMembers = offer.groupMembers ?? []
@@ -61,7 +64,18 @@ export function OfferCard({
     <article className="card offer-card" data-testid="offer-card">
       <div className="offer-card__head">
         <div className="offer-card__title-block">
-          <h3 className="offer-card__title">{offer.title}</h3>
+          {onOpenDetail ? (
+            <button
+              type="button"
+              className="offer-card__title offer-card__title-btn"
+              onClick={() => onOpenDetail(offer.offerId)}
+              data-testid="open-offer-detail"
+            >
+              {offer.title}
+            </button>
+          ) : (
+            <h3 className="offer-card__title">{offer.title}</h3>
+          )}
           <div className="offer-card__company">{offer.company}</div>
         </div>
         <div className="offer-card__badges">
@@ -183,6 +197,42 @@ export function OfferCard({
         </div>
       )}
 
+      {offer.affinity && (
+        <div className="offer-card__affinity" data-testid="offer-affinity">
+          {offer.affinity.state === 'produced' && offer.affinity.score != null ? (
+            <>
+              <span className="offer-card__affinity-score" style={{ color: fitColorVar(offer.affinity.score) }}>
+                {offer.affinity.score}
+                <span className="offer-card__affinity-max">/100 affinity</span>
+              </span>
+              <div className="offer-card__affinity-lists">
+                {offer.affinity.rationale && (
+                  <p className="offer-card__fit-rationale">{offer.affinity.rationale}</p>
+                )}
+                {(offer.affinity.resembles ?? []).length > 0 && (
+                  <div className="offer-card__chips">
+                    {(offer.affinity.resembles ?? []).map((r) => (
+                      <span key={r} className="chip chip--skill">
+                        {r}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
+          ) : offer.affinity.state === 'failed' ? (
+            <span className={enrichmentStatusClass('failed')}>Affinity unavailable</span>
+          ) : offer.affinity.state === 'insufficient' ? (
+            // Cold start — a distinct state, NOT "pending" (FR-006): affinity needs ≥ 3 applied offers.
+            <span className="offer-card__affinity-insufficient muted text-sm" data-testid="affinity-insufficient">
+              Affinity — not enough application history yet
+            </span>
+          ) : (
+            <span className={enrichmentStatusClass('pending')}>Affinity pending</span>
+          )}
+        </div>
+      )}
+
       {offer.requiredSkills.length > 0 && (
         <div className="offer-card__skills">
           {offer.requiredSkills.map((skill) => (
@@ -230,6 +280,11 @@ export function OfferCard({
         <a className="btn btn--primary btn--sm" href={offer.canonicalUrl} target="_blank" rel="noreferrer noopener">
           View offer ↗
         </a>
+        {onOpenDetail && (
+          <button type="button" className="btn btn--ghost btn--sm" onClick={() => onOpenDetail(offer.offerId)}>
+            Details
+          </button>
+        )}
         <button type="button" className="btn btn--ghost btn--sm" onClick={() => setShowTailorModal(true)}>
           {tailoredState ? 'Tailored CV' : 'Tailor CV'}
         </button>

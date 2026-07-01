@@ -26,4 +26,7 @@ public sealed class GenericDirectApiSource(SourceId id, ILogger<GenericDirectApi
             "Source {SourceId} uses the generic DirectApi scaffold — implement its client+mapper to collect offers.", id);
         return Task.FromResult(CollectionResult.Complete(0));
     }
+
+    /// <summary>No detail-body fetch for the scaffold source (feature 006, US2) → "not available".</summary>
+    public Task<string?> FetchBodyAsync(CollectedOffer offer, CancellationToken ct) => Task.FromResult<string?>(null);
 }

@@ -35,6 +35,24 @@ export interface FitDto {
   rationale?: string | null
 }
 
+/**
+ * Affinity lifecycle (feature 006). Adds `insufficient` (fewer than 3 applied offers — the cold-start
+ * state; not a retry-pending value). Distinct from `EnrichmentState`.
+ */
+export type AffinityState = 'pending' | 'produced' | 'failed' | 'insufficient'
+
+/**
+ * AI affinity — a DISTINCT second signal beside CV `fit` (never blended, FR-003). A numeric `score`
+ * (0–100) + `resembles` + `rationale` appear ONLY under `produced`; `insufficient` means < 3 applied
+ * offers (FR-006); never a fabricated fallback (FR-009).
+ */
+export interface AffinityDto {
+  state: AffinityState
+  score?: number
+  resembles?: string[]
+  rationale?: string | null
+}
+
 export interface OfferDto {
   offerId: string
   roleGroupId: string | null
@@ -58,6 +76,10 @@ export interface OfferDto {
   fit: FitDto | null
   /** Fit lifecycle mirror (matches `fit.state` when a produced profile exists). */
   fitState?: EnrichmentState
+  /** Affinity — a distinct second signal beside `fit` (feature 006). Always sent by the backend. */
+  affinity?: AffinityDto | null
+  /** Affinity lifecycle mirror (`produced`/`pending`/`failed`/`insufficient`). */
+  affinityState?: AffinityState
   canonicalUrl: string
   isNew: boolean
   isUpdated: boolean
@@ -93,6 +115,14 @@ export interface OffersMeta {
   pendingEnrichment: number
   /** Offers whose summary/skills failed (retries exhausted). */
   failedEnrichment: number
+  /** Offers whose affinity is pending (gated on the ≥3 applied-offer basis). Additive (feature 006). */
+  pendingAffinity?: number
+  /** Offers whose affinity failed (retries exhausted). */
+  failedAffinity?: number
+  /** How many offers the user has marked applied (drives the cold-start hint). */
+  appliedCount?: number
+  /** A usable affinity basis exists (`appliedCount ≥ 3`). */
+  hasAffinityBasis?: boolean
 }
 
 export interface OffersResponse {
@@ -100,8 +130,31 @@ export interface OffersResponse {
   meta: OffersMeta
 }
 
-export type SortKey = 'rank' | 'salary' | 'fit' | 'recency' | 'published'
+export type SortKey = 'rank' | 'salary' | 'fit' | 'recency' | 'published' | 'affinity'
 export type StatusFilter = 'new' | 'all' | 'active' | 'interested' | 'dismissed' | 'viewed'
+
+/** One change version of an offer (detail view). */
+export interface OfferVersionDto {
+  createdAt: string
+  changeTier: string
+}
+
+/** One timeline event of an offer (detail view). */
+export interface OfferEventDto {
+  occurredAt: string
+  type: string
+}
+
+/**
+ * `GET /api/offers/{id}` — the offer + its server-**sanitised** body + change/version history (US2).
+ * `descriptionHtml` is null when no body was captured ("description not available").
+ */
+export interface OfferDetailDto {
+  offer: OfferDto
+  descriptionHtml: string | null
+  versions: OfferVersionDto[]
+  events: OfferEventDto[]
+}
 
 export interface OffersQuery {
   status?: StatusFilter

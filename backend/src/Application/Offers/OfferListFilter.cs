@@ -23,6 +23,9 @@ public enum OfferSort
 
     /// <summary>By the source-reported publish date (newest first); offers without one sort last.</summary>
     Published,
+
+    /// <summary>By produced affinity score (highest first), then the default rank (FR-004, feature 006).</summary>
+    Affinity,
 }
 
 public enum AvailabilityFilter
