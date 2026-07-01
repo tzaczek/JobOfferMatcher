@@ -61,9 +61,10 @@ public sealed class RestoreAtomicityTests(PostgresFixture postgres)
             before = await BackupTestSupport.FingerprintAllAsync(db);
         }
 
+        var noOpBackfill = new NoOpBackfill();
         var restore = new RestoreService(
             archiveStore, snapshotStore, migrations, safetyStore, backupService, faultyCvStore,
-            new NoOpBackfill(), gate, TimeProvider.System, NullLogger<RestoreService>.Instance);
+            noOpBackfill, noOpBackfill, gate, TimeProvider.System, NullLogger<RestoreService>.Instance);
 
         using var upload = new MemoryStream(archiveBytes);
         var result = await restore.RestoreAsync(upload);
@@ -115,7 +116,7 @@ public sealed class RestoreAtomicityTests(PostgresFixture postgres)
         public void Dispose() { }
     }
 
-    private sealed class NoOpBackfill : IEnrichmentBackfill
+    private sealed class NoOpBackfill : IEnrichmentBackfill, JobOfferMatcher.Application.Applications.IApplicationBackfill
     {
         public Task RunAsync(CancellationToken ct = default) => Task.CompletedTask;
     }

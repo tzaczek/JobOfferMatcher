@@ -6,6 +6,8 @@
 # CVs and any personal documents
 cv/
 cv-data/
+# The 004 source-CV layout reference / working set holds real CV PDFs + personal notes.
+cv_versions/
 *.cv.pdf
 
 # Live database, dumps, and data exports

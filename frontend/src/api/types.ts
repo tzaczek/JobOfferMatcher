@@ -297,3 +297,167 @@ export interface RestoreReportDto {
   safetyBackupPath: string
   backfillApplied: boolean
 }
+
+// ---- Tailored CV (004) ------------------------------------------------------
+// Mirrors contracts/tailored-cv-api.md. A per-offer CV produced only by the local /tailor-cv worker.
+
+/** Lifecycle of a tailored CV. A produced one has both HTML (preview) and PDF (download). */
+export type TailoredCvState = 'pending' | 'produced' | 'failed'
+
+/** The tailored CV for one offer. */
+export interface TailoredCvDto {
+  offerId: string
+  offerTitle: string
+  company: string
+  sourceCvId: string
+  state: TailoredCvState
+  generationVersion: number
+  emphasisedSkills: string[]
+  /** The exact prompt used (shown == used, SC-003). */
+  prompt: string
+  /** True only when produced and the PDF exists → download enabled (FR-009). */
+  hasPdf: boolean
+  generatedAt: string | null
+  lastError?: string | null
+}
+
+/** The attached, read-only source CV reference (FR-003). */
+export interface TailoredCvSourceCvDto {
+  id: string
+  fileName: string
+}
+
+/** The prefilled, non-persisted modal contents (FR-013). `sourceCv` null ⇒ "add a CV first" (NoCvOnFile). */
+export interface TailoredCvDraftDto {
+  offerId: string
+  offerTitle: string
+  company: string
+  prompt: string
+  emphasisedSkills: string[]
+  allOfferSkills: string[]
+  sourceCv: TailoredCvSourceCvDto | null
+}
+
+// ---- Application tracking (005) ---------------------------------------------
+// Mirrors contracts/applications-api.md. An application is keyed by its offer id (satellite). The
+// pipeline stage is user-configurable; active/closed + outcome is a separate fixed dimension.
+
+/** Whether an application is still being pursued (`active`) or wrapped up (`closed`). */
+export type ApplicationStatus = 'active' | 'closed'
+/** Fixed terminal outcome of a closed application. */
+export type ApplicationOutcome = 'accepted' | 'rejected' | 'withdrawn' | 'noResponse'
+/** Direction of a logged communication. */
+export type CommunicationDirection = 'inbound' | 'outbound'
+/** Kind tag on a merged timeline entry (FR-007). */
+export type TimelineKind =
+  | 'stageChanged'
+  | 'closed'
+  | 'reopened'
+  | 'note'
+  | 'task'
+  | 'taskDone'
+  | 'document'
+  | 'communication'
+  | 'interview'
+
+/** One user-configurable pipeline column (FR-019). */
+export interface PipelineStageDto {
+  id: string
+  name: string
+  position: number
+}
+
+/** One card on the pipeline board (FR-004/FR-009). Task/interview aggregates derived server-side. */
+export interface ApplicationCardDto {
+  offerId: string
+  title: string
+  company: string
+  stageId: string
+  status: ApplicationStatus
+  outcome?: ApplicationOutcome | null
+  appliedAt?: string | null
+  outstandingTaskCount: number
+  overdueTaskCount: number
+  nextInterviewAt?: string | null
+}
+
+export interface ApplicationBoardStageDto {
+  id: string
+  name: string
+  position: number
+  applications: ApplicationCardDto[]
+}
+
+/** The whole board: active applications grouped by stage + a closed list (tagged by outcome). */
+export interface ApplicationBoardDto {
+  stages: ApplicationBoardStageDto[]
+  closed: ApplicationCardDto[]
+}
+
+export interface TimelineEntryDto {
+  occurredAt: string
+  kind: TimelineKind
+  title: string
+  detail?: string | null
+}
+
+export interface NoteDto {
+  id: string
+  body: string
+  createdAt: string
+}
+
+export interface TaskDto {
+  id: string
+  title: string
+  description?: string | null
+  dueAt?: string | null
+  completedAt?: string | null
+  /** Derived server-side: past-due AND not completed. */
+  overdue: boolean
+}
+
+export interface DocumentDto {
+  id: string
+  originalFileName: string
+  contentType?: string | null
+  sizeBytes: number
+  addedAt: string
+}
+
+export interface CommunicationDto {
+  id: string
+  occurredAt: string
+  direction: CommunicationDirection
+  channel: string
+  summary: string
+}
+
+export interface InterviewDto {
+  id: string
+  kind: string
+  scheduledAt?: string | null
+  interviewer?: string | null
+  outcome?: string | null
+  notes?: string | null
+  /** Derived server-side: scheduled in the future. */
+  upcoming: boolean
+}
+
+/** The full application detail surface: header + merged timeline + all child collections (FR-002/003/007). */
+export interface ApplicationDetailDto {
+  offerId: string
+  title: string
+  company: string
+  stageId: string
+  status: ApplicationStatus
+  outcome?: ApplicationOutcome | null
+  appliedAt?: string | null
+  closedAt?: string | null
+  timeline: TimelineEntryDto[]
+  notes: NoteDto[]
+  tasks: TaskDto[]
+  documents: DocumentDto[]
+  communications: CommunicationDto[]
+  interviews: InterviewDto[]
+}

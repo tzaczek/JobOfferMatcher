@@ -145,6 +145,46 @@ channel carries CV/offer text.
 
 ---
 
+## Tailored CV — the `/tailor-cv` worker
+
+Generate a **CV tailored to one specific offer** — re-emphasising that posting's skills — from a
+**transparent, editable prompt**, then download it as a polished **A4 PDF**. Like enrichment, the
+backend never calls an AI service: it exposes a loopback-only **tailored-CV queue**
+(`/api/tailored-cv/*`) and **your own Claude Code session** drains it as a worker. The one new
+mechanism is **HTML→PDF rendering**, done in-process with the **already-present Playwright/Chromium**
+(no new dependency). The tailored CV is built **only** from your uploaded CV — it re-emphasises and
+reorders real experience and **fabricates nothing** (FR-006).
+
+**Use it.** On an offer card, click **Tailor CV** → a modal opens showing the offer's emphasised-skill
+chips (toggleable), your attached source CV, and the **exact, editable prompt**. Toggling a skill
+updates the prompt; editing the prompt then takes over. Click **Generate** → the request goes
+`pending`.
+
+**Run the worker.** With the app running (`./start.ps1`), open Claude Code in this repo and run:
+
+```
+/tailor-cv
+```
+
+It loops `GET /api/tailored-cv/pending` → reads your source CV **by local path** + the `cv_versions/`
+two-column layout (`v2_two_column.html` + `NOTES.md`) → produces tailored **HTML** → `POST
+/api/tailored-cv/results`, until the queue is drained. The **backend renders the HTML to the
+downloadable PDF** (Playwright). Re-runnable and idempotent; a regenerate while the worker is mid-pass
+is harmlessly **superseded** (a monotonic generation-version guards stale write-backs).
+
+**View & manage.** A produced CV is shown **inline** in the modal and **downloadable** as a PDF.
+The **Tailored CVs** page (top nav) lists them all, links back to each offer, and offers
+view / regenerate / download / remove. A tailored CV **persists** even after its offer is delisted,
+and is **included in backup/restore** (the `tailored_cv` table + its flat `cv-data/tailored-*.html/.pdf`
+files). The whole `/api/tailored-cv/*` group is **fail-closed loopback** — the source-CV binary is read
+from disk by path and never traverses HTTP, and the PDF is served only to the local user (Principle IV).
+
+**Run-mode caveat (ADR-2/ADR-4).** As with `/enrich`, the worker and the app must share a host +
+filesystem — the supported mode is the default `./start.ps1` (app via `dotnet run` on
+`http://localhost:5180`), where loopback is genuine and the CV path resolves on the worker's filesystem.
+
+---
+
 ## Backup & restore
 
 Your data is recoverable (Principle IX — append-only migrations, deliberate destructive ops). The

@@ -1,4 +1,5 @@
 using JobOfferMatcher.Application.Cv;
+using JobOfferMatcher.Domain.Applications;
 using JobOfferMatcher.Domain.Enrichment;
 using JobOfferMatcher.Infrastructure.Persistence.Seed;
 using Microsoft.EntityFrameworkCore;
@@ -26,15 +27,71 @@ public static class DatabaseInitializer
         logger.LogInformation("Applying database migrations...");
         await db.Database.MigrateAsync(ct);
 
-        await DatabaseSeeder.SeedAsync(db, logger, ct);
+        var time = scope.ServiceProvider.GetRequiredService<TimeProvider>();
+        await DatabaseSeeder.SeedAsync(db, time, logger, ct);
 
         await BackfillEnrichmentAsync(
             db,
             scope.ServiceProvider.GetRequiredService<ICvFileStore>(),
             scope.ServiceProvider.GetRequiredService<ICvTextExtractor>(),
-            scope.ServiceProvider.GetRequiredService<TimeProvider>(),
+            time,
             logger,
             ct);
+
+        await BackfillApplicationsAsync(db, time, logger, ct);
+    }
+
+    /// <summary>
+    /// Idempotent no-data-loss backfill (ADR-3, SC-001/SC-007): ensure the default stages exist, then for
+    /// every offer marked <c>Applied</c> that has no <c>application</c> row, create one at the first stage
+    /// (<c>AppliedAt = offer.AppliedAt</c>) and migrate the legacy <c>offer.ApplicationNote</c> to the first
+    /// journal entry (only when the journal is empty). Re-running only fills gaps. Runs at startup (in-place
+    /// upgrade) AND — via <c>ApplicationBackfillRunner</c> → <c>RestoreService</c> — after an OLDER restore,
+    /// because 003's restore <c>TRUNCATE</c>s the full HEAD table list, leaving the application tables empty.
+    /// </summary>
+    public static async Task BackfillApplicationsAsync(AppDbContext db, TimeProvider time, ILogger logger, CancellationToken ct = default)
+    {
+        // On the restore path the seed doesn't run, so ensure stages exist before placing applications.
+        await DatabaseSeeder.SeedPipelineStagesAsync(db, time, logger, ct);
+
+        var firstStage = await db.PipelineStages
+            .OrderBy(s => s.Position).ThenBy(s => s.CreatedAt)
+            .FirstOrDefaultAsync(ct);
+        if (firstStage is null)
+        {
+            return; // No stages at all (a user deleted them and none were seeded) — nothing to place.
+        }
+
+        var withApplication = (await db.Applications.Select(a => a.OfferId).ToListAsync(ct)).ToHashSet();
+        var missing = (await db.Offers.Where(o => o.Applied).ToListAsync(ct))
+            .Where(o => !withApplication.Contains(o.Id))
+            .ToList();
+
+        var notesMigrated = 0;
+        foreach (var offer in missing)
+        {
+            var now = time.GetUtcNow();
+            await db.Applications.AddAsync(JobApplication.Create(offer.Id, firstStage.Id, offer.AppliedAt, now), ct);
+
+            if (!string.IsNullOrWhiteSpace(offer.ApplicationNote)
+                && !await db.ApplicationNotes.AnyAsync(n => n.OfferId == offer.Id, ct))
+            {
+                var note = ApplicationNote.Create(offer.Id, offer.ApplicationNote, offer.AppliedAt ?? now);
+                if (note.IsSuccess)
+                {
+                    await db.ApplicationNotes.AddAsync(note.Value, ct);
+                    notesMigrated++;
+                }
+            }
+        }
+
+        if (missing.Count > 0)
+        {
+            await db.SaveChangesAsync(ct);
+            logger.LogInformation(
+                "Application backfill: +{Applications} application(s) reconstructed; {Notes} legacy note(s) migrated.",
+                missing.Count, notesMigrated);
+        }
     }
 
     /// <summary>

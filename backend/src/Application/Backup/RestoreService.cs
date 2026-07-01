@@ -1,3 +1,4 @@
+using JobOfferMatcher.Application.Applications;
 using JobOfferMatcher.Application.Cv;
 using JobOfferMatcher.Application.Enrichment;
 using JobOfferMatcher.Application.Scanning;
@@ -22,6 +23,7 @@ public sealed class RestoreService(
     BackupService backupService,
     ICvFileStore cvFileStore,
     IEnrichmentBackfill backfill,
+    IApplicationBackfill applicationBackfill,
     MaintenanceGate gate,
     TimeProvider time,
     ILogger<RestoreService> logger)
@@ -97,11 +99,13 @@ public sealed class RestoreService(
                 return BackupErrors.RestoreFailed;
             }
 
-            // 6. Older backup → idempotent enrichment backfill (synthesise satellites added by later migrations).
+            // 6. Older backup → idempotent backfills (synthesise satellites added by later migrations):
+            // enrichment (002) first, then applications (005) — both fill gaps left by an older snapshot.
             var backfillApplied = compatibility == BackupCompatibility.Older;
             if (backfillApplied)
             {
                 await backfill.RunAsync(ct);
+                await applicationBackfill.RunAsync(ct);
             }
 
             var tableCounts = archive.Manifest.Tables.ToDictionary(t => t.Name, t => t.RowCount);

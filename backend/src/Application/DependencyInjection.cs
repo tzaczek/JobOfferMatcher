@@ -1,3 +1,4 @@
+using JobOfferMatcher.Application.Applications;
 using JobOfferMatcher.Application.Backup;
 using JobOfferMatcher.Application.Cv;
 using JobOfferMatcher.Application.Enrichment;
@@ -7,6 +8,7 @@ using JobOfferMatcher.Application.Scanning;
 using JobOfferMatcher.Application.Scheduling;
 using JobOfferMatcher.Application.Settings;
 using JobOfferMatcher.Application.Sources;
+using JobOfferMatcher.Application.TailoredCvs;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace JobOfferMatcher.Application;
@@ -24,6 +26,8 @@ public static class DependencyInjection
         services.AddScoped<IScanRunner, ScanOrchestrator>();
         services.AddScoped<SetUserOfferStatus>();
         services.AddScoped<SetOfferApplication>();
+        services.AddScoped<ApplicationTrackingService>();
+        services.AddScoped<PipelineStageService>();
         services.AddScoped<ScheduleService>();
         services.AddScoped<CvService>();
         services.AddScoped<ProfileService>();
@@ -32,6 +36,7 @@ public static class DependencyInjection
         services.AddScoped<RoleGroupService>();
         services.AddScoped<ExportService>();
         services.AddScoped<EnrichmentService>();
+        services.AddScoped<TailoredCvService>();
         services.AddScoped<BackupService>();
         services.AddScoped<RestoreService>();
 

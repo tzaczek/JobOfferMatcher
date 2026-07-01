@@ -94,3 +94,54 @@ public readonly record struct CvId(Guid Value) : IStronglyTypedId<CvId>
     public static bool TryParse(string? text, out CvId id) => StronglyTypedId.TryParse(text, out id);
     public override string ToString() => Value.ToString();
 }
+
+// --- Application tracking (005). The JobApplication root reuses OfferId as its key (satellite,
+// like OfferFit / tailored_cv); its pipeline stage + the five child tables get their own ids. ---
+
+public readonly record struct PipelineStageId(Guid Value) : IStronglyTypedId<PipelineStageId>
+{
+    public static PipelineStageId New() => new(Guid.NewGuid());
+    public static PipelineStageId From(Guid value) => new(value);
+    public static bool TryParse(string? text, out PipelineStageId id) => StronglyTypedId.TryParse(text, out id);
+    public override string ToString() => Value.ToString();
+}
+
+public readonly record struct ApplicationNoteId(Guid Value) : IStronglyTypedId<ApplicationNoteId>
+{
+    public static ApplicationNoteId New() => new(Guid.NewGuid());
+    public static ApplicationNoteId From(Guid value) => new(value);
+    public static bool TryParse(string? text, out ApplicationNoteId id) => StronglyTypedId.TryParse(text, out id);
+    public override string ToString() => Value.ToString();
+}
+
+public readonly record struct ApplicationTaskId(Guid Value) : IStronglyTypedId<ApplicationTaskId>
+{
+    public static ApplicationTaskId New() => new(Guid.NewGuid());
+    public static ApplicationTaskId From(Guid value) => new(value);
+    public static bool TryParse(string? text, out ApplicationTaskId id) => StronglyTypedId.TryParse(text, out id);
+    public override string ToString() => Value.ToString();
+}
+
+public readonly record struct ApplicationDocumentId(Guid Value) : IStronglyTypedId<ApplicationDocumentId>
+{
+    public static ApplicationDocumentId New() => new(Guid.NewGuid());
+    public static ApplicationDocumentId From(Guid value) => new(value);
+    public static bool TryParse(string? text, out ApplicationDocumentId id) => StronglyTypedId.TryParse(text, out id);
+    public override string ToString() => Value.ToString();
+}
+
+public readonly record struct ApplicationCommunicationId(Guid Value) : IStronglyTypedId<ApplicationCommunicationId>
+{
+    public static ApplicationCommunicationId New() => new(Guid.NewGuid());
+    public static ApplicationCommunicationId From(Guid value) => new(value);
+    public static bool TryParse(string? text, out ApplicationCommunicationId id) => StronglyTypedId.TryParse(text, out id);
+    public override string ToString() => Value.ToString();
+}
+
+public readonly record struct ApplicationInterviewId(Guid Value) : IStronglyTypedId<ApplicationInterviewId>
+{
+    public static ApplicationInterviewId New() => new(Guid.NewGuid());
+    public static ApplicationInterviewId From(Guid value) => new(value);
+    public static bool TryParse(string? text, out ApplicationInterviewId id) => StronglyTypedId.TryParse(text, out id);
+    public override string ToString() => Value.ToString();
+}

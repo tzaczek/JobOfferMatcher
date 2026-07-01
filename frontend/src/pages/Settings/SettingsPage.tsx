@@ -6,6 +6,7 @@ import { WeightsSection } from './WeightsSection.tsx'
 import { NormalizationSection } from './NormalizationSection.tsx'
 import { EnrichmentSection } from './EnrichmentSection.tsx'
 import { BackupSection } from './BackupSection.tsx'
+import { PipelineStagesSection } from './PipelineStagesSection.tsx'
 import './SettingsPage.css'
 
 export function SettingsPage() {
@@ -112,6 +113,7 @@ export function SettingsPage() {
         closed, install it as a Windows Service / Task Scheduler login-item.
       </p>
 
+      <PipelineStagesSection />
       <WeightsSection />
       <EnrichmentSection />
       <NormalizationSection />

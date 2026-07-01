@@ -1,3 +1,4 @@
+using JobOfferMatcher.Domain.Applications;
 using JobOfferMatcher.Domain.Common.Ids;
 using JobOfferMatcher.Domain.Cv;
 using JobOfferMatcher.Domain.Enrichment;
@@ -7,6 +8,7 @@ using JobOfferMatcher.Domain.Scans;
 using JobOfferMatcher.Domain.Scheduling;
 using JobOfferMatcher.Domain.Settings;
 using JobOfferMatcher.Domain.Sources;
+using JobOfferMatcher.Domain.TailoredCvs;
 using JobOfferMatcher.Infrastructure.Persistence.Converters;
 using Microsoft.EntityFrameworkCore;
 
@@ -31,6 +33,16 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<RoleGroup> RoleGroups => Set<RoleGroup>();
     public DbSet<OfferEnrichment> OfferEnrichments => Set<OfferEnrichment>();
     public DbSet<OfferFit> OfferFits => Set<OfferFit>();
+    public DbSet<TailoredCv> TailoredCvs => Set<TailoredCv>();
+
+    // Application tracking (005) — the JobApplication satellite (key OfferId) + its pipeline + 5 child tables.
+    public DbSet<PipelineStage> PipelineStages => Set<PipelineStage>();
+    public DbSet<JobApplication> Applications => Set<JobApplication>();
+    public DbSet<ApplicationNote> ApplicationNotes => Set<ApplicationNote>();
+    public DbSet<ApplicationTask> ApplicationTasks => Set<ApplicationTask>();
+    public DbSet<ApplicationDocument> ApplicationDocuments => Set<ApplicationDocument>();
+    public DbSet<ApplicationCommunication> ApplicationCommunications => Set<ApplicationCommunication>();
+    public DbSet<ApplicationInterview> ApplicationInterviews => Set<ApplicationInterview>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -50,5 +62,13 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         configurationBuilder.Properties<OfferEventId>().HaveConversion<OfferEventIdConverter>();
         configurationBuilder.Properties<RoleGroupId>().HaveConversion<RoleGroupIdConverter>();
         configurationBuilder.Properties<CvId>().HaveConversion<CvIdConverter>();
+
+        // Application tracking (005).
+        configurationBuilder.Properties<PipelineStageId>().HaveConversion<PipelineStageIdConverter>();
+        configurationBuilder.Properties<ApplicationNoteId>().HaveConversion<ApplicationNoteIdConverter>();
+        configurationBuilder.Properties<ApplicationTaskId>().HaveConversion<ApplicationTaskIdConverter>();
+        configurationBuilder.Properties<ApplicationDocumentId>().HaveConversion<ApplicationDocumentIdConverter>();
+        configurationBuilder.Properties<ApplicationCommunicationId>().HaveConversion<ApplicationCommunicationIdConverter>();
+        configurationBuilder.Properties<ApplicationInterviewId>().HaveConversion<ApplicationInterviewIdConverter>();
     }
 }

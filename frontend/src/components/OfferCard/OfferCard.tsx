@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import type { ApplicationInput, OfferDto, UserStatus } from '../../api/types.ts'
+import type { ApplicationInput, OfferDto, TailoredCvState, UserStatus } from '../../api/types.ts'
 import { statusChipClass, qualityChipClass, enrichmentStatusClass, fitColorVar } from '../../theme/index.ts'
 import { formatDate, formatDateUtc, formatSalaryBand, formatWorkMode, titleCase } from '../../lib/format.ts'
 import { ApplyModal } from '../ApplyModal/ApplyModal.tsx'
+import { TailorCvModal } from '../TailorCvModal/TailorCvModal.tsx'
 import './OfferCard.css'
 
 interface OfferCardProps {
@@ -14,9 +15,27 @@ interface OfferCardProps {
   onClearApplied?: (offerId: string) => Promise<void> | void
   /** Split a wrongly-merged cross-source role group (US4). Called with the role group id. */
   onSplitGroup?: (roleGroupId: string) => void
+  /** Lifecycle of this offer's tailored CV, when one exists (drives the indicator + the reopen label). */
+  tailoredState?: TailoredCvState
+  /** Refresh the tailored-CV lookup after a generate/regenerate/remove. */
+  onTailoredChanged?: () => void
+  /** Current pipeline-stage name when this applied offer has an application (US1). */
+  applicationStageName?: string
+  /** Open the application detail drawer for this offer (shown when applied). */
+  onOpenApplication?: (offerId: string) => void
 }
 
-export function OfferCard({ offer, onSetStatus, onMarkApplied, onClearApplied, onSplitGroup }: OfferCardProps) {
+export function OfferCard({
+  offer,
+  onSetStatus,
+  onMarkApplied,
+  onClearApplied,
+  onSplitGroup,
+  tailoredState,
+  onTailoredChanged,
+  applicationStageName,
+  onOpenApplication,
+}: OfferCardProps) {
   const hasSalary = offer.salaryBands.length > 0
   const groupMembers = offer.groupMembers ?? []
   const roleGroupId = offer.roleGroupId
@@ -25,6 +44,7 @@ export function OfferCard({ offer, onSetStatus, onMarkApplied, onClearApplied, o
 
   const [showApplyModal, setShowApplyModal] = useState(false)
   const [savingApply, setSavingApply] = useState(false)
+  const [showTailorModal, setShowTailorModal] = useState(false)
 
   async function handleSaveApplication(input: ApplicationInput) {
     if (!onMarkApplied) return
@@ -56,6 +76,16 @@ export function OfferCard({ offer, onSetStatus, onMarkApplied, onClearApplied, o
           {offer.applied && (
             <span className="chip chip--applied" title={offer.applicationNote ?? undefined}>
               Applied{offer.appliedAt ? ` · ${formatDateUtc(offer.appliedAt)}` : ''}
+            </span>
+          )}
+          {offer.applied && applicationStageName && (
+            <span className="chip chip--interested" data-testid="application-stage-chip">
+              {applicationStageName}
+            </span>
+          )}
+          {tailoredState && (
+            <span className={enrichmentStatusClass(tailoredState)} data-testid="tailored-indicator">
+              Tailored CV{tailoredState === 'produced' ? '' : ` · ${tailoredState}`}
             </span>
           )}
         </div>
@@ -200,6 +230,9 @@ export function OfferCard({ offer, onSetStatus, onMarkApplied, onClearApplied, o
         <a className="btn btn--primary btn--sm" href={offer.canonicalUrl} target="_blank" rel="noreferrer noopener">
           View offer ↗
         </a>
+        <button type="button" className="btn btn--ghost btn--sm" onClick={() => setShowTailorModal(true)}>
+          {tailoredState ? 'Tailored CV' : 'Tailor CV'}
+        </button>
         <div className="offer-card__status-actions">
           {onSetStatus &&
             (offer.userStatus === 'dismissed' ? (
@@ -233,6 +266,16 @@ export function OfferCard({ offer, onSetStatus, onMarkApplied, onClearApplied, o
           {onMarkApplied &&
             (offer.applied ? (
               <>
+                {onOpenApplication && (
+                  <button
+                    type="button"
+                    className="btn btn--ghost btn--sm"
+                    onClick={() => onOpenApplication(offer.offerId)}
+                    data-testid="open-application"
+                  >
+                    Application
+                  </button>
+                )}
                 <button type="button" className="btn btn--ghost btn--sm" onClick={() => setShowApplyModal(true)}>
                   Edit application
                 </button>
@@ -263,6 +306,15 @@ export function OfferCard({ offer, onSetStatus, onMarkApplied, onClearApplied, o
           onSave={handleSaveApplication}
           onClose={() => setShowApplyModal(false)}
           saving={savingApply}
+        />
+      )}
+
+      {showTailorModal && (
+        <TailorCvModal
+          offerId={offer.offerId}
+          offerTitle={offer.title}
+          onClose={() => setShowTailorModal(false)}
+          onChanged={onTailoredChanged}
         />
       )}
     </article>

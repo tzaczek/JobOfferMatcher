@@ -20,11 +20,16 @@ public sealed class ExportServiceTests
         string company = "Acme",
         bool applied = false,
         DateTimeOffset? appliedAt = null,
-        string? note = null) => new(
+        string? note = null,
+        string? applicationStage = null,
+        string? applicationStatus = null,
+        string? applicationOutcome = null,
+        IReadOnlyList<InterviewEventExport>? interviews = null) => new(
         Guid.NewGuid(), "justjoin.it", title, company, "Kraków", "Remote", "b2b", "senior",
         ["C#", ".NET"], [], [new SalaryBandExport(18000, 22000, "PLN", "monthly", "b2b", "net")],
         "https://justjoin.it/job/x", "available", "new", applied, appliedAt, note, null,
-        DateTimeOffset.UnixEpoch, DateTimeOffset.UnixEpoch, DateTimeOffset.UnixEpoch);
+        DateTimeOffset.UnixEpoch, DateTimeOffset.UnixEpoch, DateTimeOffset.UnixEpoch,
+        applicationStage, applicationStatus, applicationOutcome, interviews ?? []);
 
     private static ExportService Service(params OfferExport[] rows) => new(new FakeReader(rows));
 
@@ -79,5 +84,27 @@ public sealed class ExportServiceTests
         notAppliedJson.ShouldContain("\"applied\": false");
         notAppliedJson.ShouldContain("\"appliedAt\": null");
         notAppliedJson.ShouldContain("\"applicationNote\": null");
+    }
+
+    [Fact]
+    public async Task Export_includes_application_stage_status_outcome_and_interviews()
+    {
+        var row = Row(
+            applied: true,
+            applicationStage: "Interviewing",
+            applicationStatus: "closed",
+            applicationOutcome: "rejected",
+            interviews: [new InterviewEventExport("phone screen", new DateTimeOffset(2026, 6, 5, 9, 0, 0, TimeSpan.Zero), "advanced")]);
+
+        var csv = Encoding.UTF8.GetString((await Service(row).ExportAsync(ExportFormat.Csv)).Content);
+        csv.ShouldContain("applicationStage,applicationStatus,applicationOutcome,interviews"); // header columns present
+        csv.ShouldContain("Interviewing");
+        csv.ShouldContain("rejected");
+        csv.ShouldContain("phone screen");
+
+        var json = Encoding.UTF8.GetString((await Service(row).ExportAsync(ExportFormat.Json)).Content);
+        json.ShouldContain("\"applicationStage\": \"Interviewing\"");
+        json.ShouldContain("\"applicationOutcome\": \"rejected\"");
+        json.ShouldContain("phone screen");
     }
 }

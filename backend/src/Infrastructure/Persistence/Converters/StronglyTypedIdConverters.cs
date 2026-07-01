@@ -21,3 +21,16 @@ public sealed class OfferEventIdConverter() : ValueConverter<OfferEventId, Guid>
 public sealed class RoleGroupIdConverter() : ValueConverter<RoleGroupId, Guid>(id => id.Value, v => RoleGroupId.From(v));
 
 public sealed class CvIdConverter() : ValueConverter<CvId, Guid>(id => id.Value, v => CvId.From(v));
+
+// Application tracking (005).
+public sealed class PipelineStageIdConverter() : ValueConverter<PipelineStageId, Guid>(id => id.Value, v => PipelineStageId.From(v));
+
+public sealed class ApplicationNoteIdConverter() : ValueConverter<ApplicationNoteId, Guid>(id => id.Value, v => ApplicationNoteId.From(v));
+
+public sealed class ApplicationTaskIdConverter() : ValueConverter<ApplicationTaskId, Guid>(id => id.Value, v => ApplicationTaskId.From(v));
+
+public sealed class ApplicationDocumentIdConverter() : ValueConverter<ApplicationDocumentId, Guid>(id => id.Value, v => ApplicationDocumentId.From(v));
+
+public sealed class ApplicationCommunicationIdConverter() : ValueConverter<ApplicationCommunicationId, Guid>(id => id.Value, v => ApplicationCommunicationId.From(v));
+
+public sealed class ApplicationInterviewIdConverter() : ValueConverter<ApplicationInterviewId, Guid>(id => id.Value, v => ApplicationInterviewId.From(v));

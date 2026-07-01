@@ -6,12 +6,17 @@ import type {
   ScanStatusDto,
   SortKey,
   SourceDto,
+  TailoredCvState,
   UserStatus,
 } from '../../api/types.ts'
 import { clearOfferApplied, listOffers, markOfferApplied, setOfferStatus } from '../../api/offers.ts'
 import { getScanStatus, runScan } from '../../api/scans.ts'
 import { listSources } from '../../api/sources.ts'
 import { setRoleGroupOverride } from '../../api/roleGroups.ts'
+import { listTailored } from '../../api/tailoredCv.ts'
+import { getBoard } from '../../api/applications.ts'
+import type { PipelineStageDto } from '../../api/types.ts'
+import { ApplicationDrawer } from '../../components/ApplicationDrawer/ApplicationDrawer.tsx'
 import { exportUrl } from '../../api/export.ts'
 import { ApiError } from '../../api/client.ts'
 import { poll } from '../../lib/polling.ts'
@@ -54,6 +59,35 @@ export function OffersPage() {
   const [scanning, setScanning] = useState(false)
   const [scanError, setScanError] = useState<string | null>(null)
 
+  const [tailoredByOffer, setTailoredByOffer] = useState<Record<string, TailoredCvState>>({})
+  const [stageByOffer, setStageByOffer] = useState<Record<string, string>>({})
+  const [appStages, setAppStages] = useState<PipelineStageDto[]>([])
+  const [openApplicationId, setOpenApplicationId] = useState<string | null>(null)
+
+  const loadTailored = useCallback(async (signal?: AbortSignal) => {
+    try {
+      const { data } = await listTailored(signal)
+      setTailoredByOffer(Object.fromEntries(data.map((t) => [t.offerId, t.state])))
+    } catch (e) {
+      if (e instanceof DOMException && e.name === 'AbortError') return
+      // Non-fatal: the per-offer indicator simply stays hidden if the lookup can't be read.
+    }
+  }, [])
+
+  const loadApplications = useCallback(async (signal?: AbortSignal) => {
+    try {
+      const board = await getBoard(signal)
+      const map: Record<string, string> = {}
+      for (const stage of board.stages) for (const card of stage.applications) map[card.offerId] = stage.name
+      for (const card of board.closed) map[card.offerId] = 'Closed'
+      setStageByOffer(map)
+      setAppStages(board.stages.map((s) => ({ id: s.id, name: s.name, position: s.position })))
+    } catch (e) {
+      if (e instanceof DOMException && e.name === 'AbortError') return
+      // Non-fatal: the per-offer stage chip simply stays hidden if the board can't be read.
+    }
+  }, [])
+
   const load = useCallback(
     async (signal?: AbortSignal) => {
       setLoading(true)
@@ -80,6 +114,20 @@ export function OffersPage() {
     void load(controller.signal)
     return () => controller.abort()
   }, [load])
+
+  // Per-offer tailored-CV presence/state for the card indicators (refreshed after a generate/remove).
+  useEffect(() => {
+    const controller = new AbortController()
+    void loadTailored(controller.signal)
+    return () => controller.abort()
+  }, [loadTailored])
+
+  // Per-offer application stage for the card chip (refreshed after apply/clear or a drawer change).
+  useEffect(() => {
+    const controller = new AbortController()
+    void loadApplications(controller.signal)
+    return () => controller.abort()
+  }, [loadApplications])
 
   // Populate the source filter once; failure is non-fatal (filter stays "All sources").
   useEffect(() => {
@@ -124,7 +172,7 @@ export function OffersPage() {
   async function handleMarkApplied(offerId: string, input: ApplicationInput) {
     try {
       await markOfferApplied(offerId, input)
-      await load()
+      await Promise.all([load(), loadApplications()])
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'Failed to mark the offer applied.')
       // Re-throw so the modal stays open on failure (it only closes on a resolved save).
@@ -135,8 +183,9 @@ export function OffersPage() {
   async function handleClearApplied(offerId: string) {
     try {
       await clearOfferApplied(offerId)
-      await load()
+      await Promise.all([load(), loadApplications()])
     } catch (e) {
+      // A cleared-with-history offer is steered to closing (409) — surface the guidance, don't erase.
       setError(e instanceof ApiError ? e.message : 'Failed to update the offer.')
     }
   }
@@ -277,9 +326,25 @@ export function OffersPage() {
               onMarkApplied={handleMarkApplied}
               onClearApplied={handleClearApplied}
               onSplitGroup={handleSplitGroup}
+              tailoredState={tailoredByOffer[offer.offerId]}
+              onTailoredChanged={loadTailored}
+              applicationStageName={stageByOffer[offer.offerId]}
+              onOpenApplication={setOpenApplicationId}
             />
           ))}
         </div>
+      )}
+
+      {openApplicationId && (
+        <ApplicationDrawer
+          offerId={openApplicationId}
+          stages={appStages}
+          onClose={() => setOpenApplicationId(null)}
+          onChanged={() => {
+            void load()
+            void loadApplications()
+          }}
+        />
       )}
     </section>
   )

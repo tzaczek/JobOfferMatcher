@@ -8,6 +8,17 @@ namespace JobOfferMatcher.Infrastructure.Tests;
 /// outbound AI call and transmits 0 records externally. This asserts the invariant mechanically over
 /// every <c>*.csproj</c> + <c>Directory.Packages.props</c>, so a stray <c>@anthropic-ai</c>/OpenAI/
 /// SemanticKernel package can never slip in unnoticed.
+/// <para>
+/// This <b>also covers feature 004</b> (FR-005/SC-007): the tailored-CV worker is the same Claude-Code
+/// session, and the HTML→PDF step reuses the already-present <c>Microsoft.Playwright</c> — 004 adds no
+/// package, so the manifest scan below transitively guards the new code too.
+/// </para>
+/// <para>
+/// This <b>also covers feature 005</b> (SC-008, T063): application tracking is entirely UI-local —
+/// <c>/api/applications/*</c> is served like <c>/api/offers/*</c> (no worker, no loopback channel, no
+/// external/AI call) and adds <b>no</b> NuGet package, so the manifest scan transitively guards it too.
+/// 0 records leave the box.
+/// </para>
 /// </summary>
 public sealed class NoAiDependencyTests
 {
