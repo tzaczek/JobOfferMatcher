@@ -119,7 +119,7 @@ public sealed class ScanOrchestrator(
             var adapter = sourceFactory.Create(source);
             var result = await adapter.CollectAsync(
                 source.Search,
-                (collected, token) => UpsertAsync(collected, scanRunId, tally, context, touched, token),
+                (collected, token) => UpsertAsync(collected, adapter, scanRunId, tally, context, touched, token),
                 ct);
 
             return (result.Outcome, result.Reason);
@@ -136,7 +136,7 @@ public sealed class ScanOrchestrator(
     }
 
     private async Task UpsertAsync(
-        CollectedOffer collected, ScanRunId scanRunId, Tally tally, SourceScanContext context, HashSet<OfferId> touched, CancellationToken ct)
+        CollectedOffer collected, IJobSource adapter, ScanRunId scanRunId, Tally tally, SourceScanContext context, HashSet<OfferId> touched, CancellationToken ct)
     {
         var now = time.GetUtcNow();
         var fingerprint = ContentFingerprint.Compute(collected.Content);
@@ -153,8 +153,18 @@ public sealed class ScanOrchestrator(
             await offers.AddEventAsync(OfferEvent.Create(created.Id, now, OfferEventType.FirstSeen), ct);
             await offers.AddEventAsync(OfferEvent.Create(created.Id, now, OfferEventType.Surfaced), ct);
             // ADR-3: every offer carries Pending derived-cache satellites (the invariant; FR-014 backfill mirrors this).
+            // 006: affinity is a third invariant satellite (an OfferFit twin), Pending at creation.
             await enrichment.AddEnrichmentAsync(OfferEnrichment.CreatePending(created.Id), ct);
             await enrichment.AddFitAsync(OfferFit.CreatePending(created.Id), ct);
+            await enrichment.AddAffinityAsync(OfferAffinity.CreatePending(created.Id), ct);
+
+            // 006 US2: capture the body for a new offer (Minor-tier; null on failure → "not available").
+            var newBody = await TryFetchBodyAsync(adapter, collected, ct);
+            if (newBody is not null)
+            {
+                created.SetDescription(newBody);
+            }
+
             offerId = created.Id;
             tally.New++;
             touched.Add(created.Id);
@@ -163,6 +173,7 @@ public sealed class ScanOrchestrator(
         {
             var wasUnavailable = existing.Availability == AvailabilityStatus.NoLongerAvailable;
             var kind = OfferClassifier.Classify(existing.CurrentFingerprint, fingerprint);
+            var storedBody = existing.DescriptionHtml; // capture before Refresh/ApplyUpdate reset it to the list-item's null
             var beforeEnrichmentHash = EnrichmentHashOf(existing);
 
             if (kind == OfferChangeKind.Updated)
@@ -173,22 +184,39 @@ public sealed class ScanOrchestrator(
                 await offers.AddEventAsync(OfferEvent.Create(existing.Id, now, OfferEventType.Updated), ct);
                 tally.Updated++;
                 touched.Add(existing.Id);
+
+                // 006: if an APPLIED offer's fingerprint changed, the affinity basis version changed →
+                // all affinity pending (data-model §2/§4). A candidate's own re-arm is handled below;
+                // this covers the OTHER offers whose stored affinity hash is now stale.
+                if (existing.Applied)
+                {
+                    await enrichment.InvalidateAllAffinityAsync(ct);
+                }
             }
             else
             {
                 // Already seen, unchanged → bump last-seen only; never re-flag new (FR-013). ADR-3:
-                // silently persist Minor-tier (description/company/location) edits for the summary hash.
+                // silently persist Minor-tier (company/location) edits for the summary hash.
                 existing.RegisterSighting(now);
                 existing.RefreshMinorContent(collected.Content);
             }
+
+            // 006 US2: fetch the body only for new/updated/body-missing offers (respecting 001 ADR-2 — not
+            // every offer every scan). Both ApplyUpdate and RefreshMinorContent just reset DescriptionHtml
+            // to the list-item's null, so re-apply the stored body when we don't (re-)fetch a fresh one.
+            var finalBody = kind == OfferChangeKind.Updated || storedBody is null
+                ? await TryFetchBodyAsync(adapter, collected, ct)
+                : storedBody;
+            existing.SetDescription(finalBody);
 
             if (wasUnavailable && existing.Availability == AvailabilityStatus.Available)
             {
                 await offers.AddEventAsync(OfferEvent.Create(existing.Id, now, OfferEventType.Reappeared), ct);
             }
 
-            // Eager invalidation: if the offer's enrichment inputs changed, re-arm its summary + fit
-            // satellites to Pending (FR-006/FR-007). Never rolls back the offers upsert (same save).
+            // Eager invalidation: if the offer's enrichment inputs changed (incl. a newly-captured body),
+            // re-arm its summary + fit + affinity satellites to Pending (FR-006/FR-007/FR-016). Never rolls
+            // back the offers upsert (same save).
             if (EnrichmentHashOf(existing) != beforeEnrichmentHash)
             {
                 await InvalidateSatellitesAsync(existing.Id, ct);
@@ -238,7 +266,32 @@ public sealed class ScanOrchestrator(
     private static string EnrichmentHashOf(Offer o) =>
         OfferEnrichmentInputs.Hash(o.CurrentFingerprint.Hash, o.Company, o.Location, o.DescriptionHtml).Serialized;
 
-    /// <summary>Re-arm an offer's summary + fit satellites to Pending (creating them if somehow absent — invariant).</summary>
+    /// <summary>
+    /// Fetch an offer's body, tolerating any failure/block (feature 006, US2): a null/thrown result never
+    /// fails the scan — the offer still collects and its body simply shows "not available".
+    /// </summary>
+    private async Task<string?> TryFetchBodyAsync(IJobSource adapter, CollectedOffer collected, CancellationToken ct)
+    {
+        try
+        {
+            return await adapter.FetchBodyAsync(collected, ct);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Body fetch failed for {NativeKey}; collecting the offer without a body.", collected.ExternalRef.NativeKey);
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Re-arm an offer's summary + fit + affinity satellites to Pending (creating them if somehow absent
+    /// — invariant). A candidate content change (incl. a newly-captured body) re-flips its own affinity;
+    /// the affinity BASIS version is unaffected, so no OTHER offer's affinity is touched here (006).
+    /// </summary>
     private async Task InvalidateSatellitesAsync(OfferId offerId, CancellationToken ct)
     {
         var enrichmentRow = await enrichment.GetEnrichmentAsync(offerId, ct);
@@ -259,6 +312,16 @@ public sealed class ScanOrchestrator(
         else
         {
             fitRow.Invalidate();
+        }
+
+        var affinityRow = await enrichment.GetAffinityAsync(offerId, ct);
+        if (affinityRow is null)
+        {
+            await enrichment.AddAffinityAsync(OfferAffinity.CreatePending(offerId), ct);
+        }
+        else
+        {
+            affinityRow.Invalidate();
         }
     }
 

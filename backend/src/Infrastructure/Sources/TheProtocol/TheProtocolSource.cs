@@ -37,6 +37,9 @@ public sealed class TheProtocolSource(
             logger: logger,
             ct: ct);
 
+    /// <summary>No detail-body fetch wired for this source (feature 006 targets justjoin.it) → "not available".</summary>
+    public Task<string?> FetchBodyAsync(CollectedOffer offer, CancellationToken ct) => Task.FromResult<string?>(null);
+
     private async Task<bool> TryEmitAsync(
         JsonElement item,
         JobSourceSearch search,

@@ -26,4 +26,7 @@ public sealed class NotConfiguredInteractiveBrowserSource(SourceId id, ILogger<N
             "Source {SourceId} requires interactive-browser collection, which is deferred — recording Incomplete.", id);
         return Task.FromResult(CollectionResult.Failed(IncompleteReason.LoginNotCompleted, 0));
     }
+
+    /// <summary>No body available from the deferred interactive-browser source (feature 006, US2).</summary>
+    public Task<string?> FetchBodyAsync(CollectedOffer offer, CancellationToken ct) => Task.FromResult<string?>(null);
 }

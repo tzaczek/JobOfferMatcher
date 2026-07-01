@@ -95,10 +95,14 @@ public static class DatabaseInitializer
     }
 
     /// <summary>
-    /// Idempotent backfill (FR-014): a <c>Pending</c> <c>offer_enrichment</c> + <c>offer_fit</c> row for
-    /// every offer lacking one, and the byte-hash for any CV that has none yet. Re-running is safe — it
-    /// only fills gaps. Makes the satellite row an invariant (one per offer); there is no "row absence
-    /// = pending" path.
+    /// Idempotent backfill (FR-014, feature 006 SC-005/SC-006): a <c>Pending</c> <c>offer_enrichment</c>
+    /// + <c>offer_fit</c> + <c>offer_affinity</c> row for every offer lacking one, and the byte-hash for
+    /// any CV that has none yet. Re-running is safe — it only fills gaps. Makes each satellite row an
+    /// invariant (one per offer); there is no "row absence = pending" path. Runs at <b>startup</b> and,
+    /// via <c>EnrichmentBackfillRunner</c> → <c>RestoreService</c>, on an <b>older-backup restore</b>
+    /// (003's restore <c>TRUNCATE</c>s the full HEAD table list, so a pre-006 backup leaves
+    /// <c>offer_affinity</c> empty until this synthesises the rows). Offer bodies are NOT backfilled here
+    /// (no startup network calls) — they fill in on the next scan.
     /// </summary>
     public static async Task BackfillEnrichmentAsync(
         AppDbContext db,
@@ -111,9 +115,11 @@ public static class DatabaseInitializer
         var offerIds = await db.Offers.Select(o => o.Id).ToListAsync(ct);
         var withEnrichment = (await db.OfferEnrichments.Select(e => e.OfferId).ToListAsync(ct)).ToHashSet();
         var withFit = (await db.OfferFits.Select(f => f.OfferId).ToListAsync(ct)).ToHashSet();
+        var withAffinity = (await db.OfferAffinities.Select(a => a.OfferId).ToListAsync(ct)).ToHashSet();
 
         var missingEnrichment = offerIds.Where(id => !withEnrichment.Contains(id)).ToList();
         var missingFit = offerIds.Where(id => !withFit.Contains(id)).ToList();
+        var missingAffinity = offerIds.Where(id => !withAffinity.Contains(id)).ToList();
 
         foreach (var id in missingEnrichment)
         {
@@ -123,6 +129,11 @@ public static class DatabaseInitializer
         foreach (var id in missingFit)
         {
             await db.OfferFits.AddAsync(OfferFit.CreatePending(id), ct);
+        }
+
+        foreach (var id in missingAffinity)
+        {
+            await db.OfferAffinities.AddAsync(OfferAffinity.CreatePending(id), ct);
         }
 
         var cvsNeedingHash = await db.CandidateCvs.Where(c => c.EnrichmentInputHash == null).ToListAsync(ct);
@@ -141,12 +152,12 @@ public static class DatabaseInitializer
             cv.SetExtractionGauge(readable, hash, time.GetUtcNow());
         }
 
-        if (missingEnrichment.Count > 0 || missingFit.Count > 0 || cvsNeedingHash.Count > 0)
+        if (missingEnrichment.Count > 0 || missingFit.Count > 0 || missingAffinity.Count > 0 || cvsNeedingHash.Count > 0)
         {
             await db.SaveChangesAsync(ct);
             logger.LogInformation(
-                "Enrichment backfill: +{Enrichment} enrichment, +{Fit} fit rows; {Cv} CV hash(es) computed.",
-                missingEnrichment.Count, missingFit.Count, cvsNeedingHash.Count);
+                "Enrichment backfill: +{Enrichment} enrichment, +{Fit} fit, +{Affinity} affinity rows; {Cv} CV hash(es) computed.",
+                missingEnrichment.Count, missingFit.Count, missingAffinity.Count, cvsNeedingHash.Count);
         }
     }
 }

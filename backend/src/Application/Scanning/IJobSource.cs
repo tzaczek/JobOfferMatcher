@@ -23,4 +23,13 @@ public interface IJobSource
         JobSourceSearch search,
         Func<CollectedOffer, CancellationToken, Task> onOffer,
         CancellationToken ct);
+
+    /// <summary>
+    /// Fetch one offer's full body (description &amp; requirements) for in-app reading (feature 006, US2).
+    /// The orchestrator calls this only for new / updated / body-missing offers (not every offer every
+    /// scan — respects the 001 ADR-2 source-access risk). Returns <c>null</c> when the source cannot
+    /// supply a body or the fetch fails/blocks — a null body is tolerated ("description not available"),
+    /// never a scan failure.
+    /// </summary>
+    Task<string?> FetchBodyAsync(CollectedOffer offer, CancellationToken ct);
 }

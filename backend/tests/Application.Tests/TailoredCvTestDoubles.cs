@@ -63,6 +63,8 @@ internal static class TailoredCvDoubles
         EnrichmentState: enrichmentState,
         Fit: fit,
         FitState: fit?.State,
+        Affinity: null,
+        AffinityState: "insufficient",
         CanonicalUrl: offer.CanonicalUrl,
         IsNew: false,
         IsUpdated: false,

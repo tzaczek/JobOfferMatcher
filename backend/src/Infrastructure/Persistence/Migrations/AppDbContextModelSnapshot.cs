@@ -340,6 +340,55 @@ namespace JobOfferMatcher.Infrastructure.Persistence.Migrations
                     b.ToTable("candidate_cv", (string)null);
                 });
 
+            modelBuilder.Entity("JobOfferMatcher.Domain.Enrichment.OfferAffinity", b =>
+                {
+                    b.Property<Guid>("OfferId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("offer_id");
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("integer")
+                        .HasColumnName("attempts");
+
+                    b.Property<string>("InputsHash")
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("inputs_hash");
+
+                    b.Property<string>("LastError")
+                        .HasColumnType("text")
+                        .HasColumnName("last_error");
+
+                    b.Property<DateTimeOffset?>("ProducedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("produced_at");
+
+                    b.Property<string>("Rationale")
+                        .HasColumnType("text")
+                        .HasColumnName("rationale");
+
+                    b.Property<string>("Resembles")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("resembles");
+
+                    b.Property<int?>("Score")
+                        .HasColumnType("integer")
+                        .HasColumnName("score");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("state");
+
+                    b.HasKey("OfferId");
+
+                    b.HasIndex("State");
+
+                    b.ToTable("offer_affinity", (string)null);
+                });
+
             modelBuilder.Entity("JobOfferMatcher.Domain.Enrichment.OfferEnrichment", b =>
                 {
                     b.Property<Guid>("OfferId")
@@ -957,6 +1006,15 @@ namespace JobOfferMatcher.Infrastructure.Persistence.Migrations
                     b.HasOne("JobOfferMatcher.Domain.Offers.Offer", null)
                         .WithOne()
                         .HasForeignKey("JobOfferMatcher.Domain.Applications.JobApplication", "OfferId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("JobOfferMatcher.Domain.Enrichment.OfferAffinity", b =>
+                {
+                    b.HasOne("JobOfferMatcher.Domain.Offers.Offer", null)
+                        .WithOne()
+                        .HasForeignKey("JobOfferMatcher.Domain.Enrichment.OfferAffinity", "OfferId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using JobOfferMatcher.Domain.Sources;
 using JobOfferMatcher.Infrastructure.Sources.JustJoinIt;
 
@@ -12,6 +13,12 @@ public sealed class MutableJustJoinItClient : IJustJoinItClient
 {
     public List<JsonElement> Items { get; private set; } = [];
     public FetchStatus Status { get; set; } = FetchStatus.Ok;
+
+    /// <summary>DETAIL bodies keyed by slug (feature 006, US2) — <c>FetchDetailAsync</c> serves these.</summary>
+    private readonly Dictionary<string, string?> _bodies = new(StringComparer.Ordinal);
+
+    /// <summary>Register a DETAIL body for an offer slug (the list item's slug is <c>"{guid}-slug"</c>).</summary>
+    public void SetBody(string slug, string? bodyHtml) => _bodies[slug] = bodyHtml;
 
     /// <summary>The search criteria the most recent scan passed to the adapter (FR-002 verification).</summary>
     public JobSourceSearch? LastSearch { get; private set; }
@@ -37,8 +44,16 @@ public sealed class MutableJustJoinItClient : IJustJoinItClient
         return Task.FromResult<(FetchStatus, JustJoinItPage?)>((FetchStatus.Ok, page));
     }
 
-    public Task<JsonElement?> FetchDetailAsync(string slug, CancellationToken ct) =>
-        Task.FromResult<JsonElement?>(null);
+    public Task<JsonElement?> FetchDetailAsync(string slug, CancellationToken ct)
+    {
+        if (!_bodies.TryGetValue(slug, out var body) || body is null)
+        {
+            return Task.FromResult<JsonElement?>(null);
+        }
+
+        var json = new JsonObject { ["body"] = body }.ToJsonString();
+        return Task.FromResult<JsonElement?>(JsonDocument.Parse(json).RootElement.Clone());
+    }
 
     private static JsonElement MakeItem(string guid, decimal salaryMax) =>
         JsonDocument.Parse(

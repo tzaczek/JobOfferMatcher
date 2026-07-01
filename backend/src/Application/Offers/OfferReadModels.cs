@@ -28,6 +28,19 @@ public sealed record FitView(
     IReadOnlyList<string> Missing,
     string? Rationale);
 
+/// <summary>
+/// AI affinity (FR-001/003, feature 006) — a DISTINCT second signal beside <see cref="FitView"/>,
+/// never blended with it. A numeric <see cref="Score"/> + <see cref="Resembles"/> + rationale appear
+/// ONLY under <c>state == "produced"</c>; <c>pending</c>/<c>failed</c> carry no score, and
+/// <c>insufficient</c> means fewer than <see cref="JobOfferMatcher.Domain.Enrichment.OfferAffinity.MinApplications"/>
+/// applied offers exist (cold start — never a fabricated fallback, FR-009).
+/// </summary>
+public sealed record AffinityView(
+    string State,
+    int? Score,
+    IReadOnlyList<string> Resembles,
+    string? Rationale);
+
 public sealed record OfferGroupMemberView(Guid OfferId, string SourceName, string CanonicalUrl);
 
 public sealed record OfferListItem(
@@ -48,6 +61,8 @@ public sealed record OfferListItem(
     string EnrichmentState,
     FitView? Fit,
     string? FitState,
+    AffinityView? Affinity,
+    string AffinityState,
     string CanonicalUrl,
     bool IsNew,
     bool IsUpdated,
@@ -62,7 +77,16 @@ public sealed record OfferListItem(
     string? ApplicationNote,
     IReadOnlyList<OfferGroupMemberView> GroupMembers);
 
-public sealed record OfferListMeta(int Total, int New, bool HasProducedProfile, int PendingEnrichment, int FailedEnrichment);
+public sealed record OfferListMeta(
+    int Total,
+    int New,
+    bool HasProducedProfile,
+    int PendingEnrichment,
+    int FailedEnrichment,
+    int PendingAffinity,
+    int FailedAffinity,
+    int AppliedCount,
+    bool HasAffinityBasis);
 
 public sealed record OfferListResult(IReadOnlyList<OfferListItem> Data, OfferListMeta Meta);
 

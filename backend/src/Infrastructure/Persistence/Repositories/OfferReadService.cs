@@ -64,7 +64,20 @@ internal sealed class OfferReadService(
 
         var pendingEnrichment = context.Enrichments.Values.Count(e => e.State == EnrichmentState.Pending);
         var failedEnrichment = context.Enrichments.Values.Count(e => e.State == EnrichmentState.Failed);
-        var meta = new OfferListMeta(items.Count, items.Count(i => i.IsNew), context.HasProducedProfile, pendingEnrichment, failedEnrichment);
+        var hasAffinityBasis = context.AppliedCount >= OfferAffinity.MinApplications;
+        // Affinity counts are gated on the basis (like fits on a produced profile) so they can reach 0.
+        var pendingAffinity = hasAffinityBasis ? context.Affinities.Values.Count(a => a.State == EnrichmentState.Pending) : 0;
+        var failedAffinity = hasAffinityBasis ? context.Affinities.Values.Count(a => a.State == EnrichmentState.Failed) : 0;
+        var meta = new OfferListMeta(
+            items.Count,
+            items.Count(i => i.IsNew),
+            context.HasProducedProfile,
+            pendingEnrichment,
+            failedEnrichment,
+            pendingAffinity,
+            failedAffinity,
+            context.AppliedCount,
+            hasAffinityBasis);
         return new OfferListResult(items, meta);
     }
 
@@ -111,12 +124,21 @@ internal sealed class OfferReadService(
 
         var enrichments = (await db.OfferEnrichments.AsNoTracking().ToListAsync(ct)).ToDictionary(e => e.OfferId);
         var fits = (await db.OfferFits.AsNoTracking().ToListAsync(ct)).ToDictionary(f => f.OfferId);
+        var affinities = (await db.OfferAffinities.AsNoTracking().ToListAsync(ct)).ToDictionary(a => a.OfferId);
+
+        // Affinity basis (006): ALL applied offers (not just the filtered feed), weighted equally. The
+        // version is null below the ≥3 cold-start gate → the read path returns "insufficient" (FR-006).
+        var appliedOffers = await db.Offers.AsNoTracking().Where(o => o.Applied).ToListAsync(ct);
+        var appliedBasis = appliedOffers.Select(o => (o.Id, o.CurrentFingerprint.Hash)).ToList();
+        var basisVersion = AppliedBasisInputs.Version(appliedBasis);
 
         var preferredBasis = settings.Preferences.PreferredEmployment.Count > 0
             ? settings.Preferences.PreferredEmployment[0]
             : (EmploymentBasis?)null;
 
-        return new ReadContext(settings, preferredBasis, producedCv is not null, effectiveProfileVersion, enrichments, fits);
+        return new ReadContext(
+            settings, preferredBasis, producedCv is not null, effectiveProfileVersion,
+            enrichments, fits, affinities, appliedBasis.Count, basisVersion);
     }
 
     private Projected Project(Offer o, ReadContext ctx)
@@ -128,8 +150,9 @@ internal sealed class OfferReadService(
         var (enrichmentState, summary, keySkills) = ProjectEnrichment(enrichment, offerEnrichHash.Serialized);
 
         var fit = ProjectFit(o, offerEnrichHash, ctx);
+        var affinity = ProjectAffinity(o, offerEnrichHash, ctx);
 
-        return new Projected(o, normalized, enrichmentState, summary, keySkills, fit);
+        return new Projected(o, normalized, enrichmentState, summary, keySkills, fit, affinity);
     }
 
     private static (string State, string? Summary, IReadOnlyList<string> KeySkills) ProjectEnrichment(OfferEnrichment? e, string currentHash)
@@ -173,6 +196,38 @@ internal sealed class OfferReadService(
 
     private static int? ProducedFitScore(FitView? fit) =>
         fit is { State: "produced", Score: { } score } ? score : null;
+
+    /// <summary>
+    /// Project affinity (006) with the same recompute-from-live-inputs stale guard as fit: a
+    /// <c>Produced</c> row is only shown when its stored hash matches the current one AND ≥3 applied
+    /// offers exist; below that it is <c>insufficient</c> (cold start); else <c>pending</c>/<c>failed</c>.
+    /// Never a fabricated fallback (FR-009). Orthogonal to fit and the CV profile (ADR-5).
+    /// </summary>
+    private static AffinityView ProjectAffinity(Offer o, InputHash offerEnrichHash, ReadContext ctx)
+    {
+        if (ctx.AppliedCount < OfferAffinity.MinApplications || ctx.BasisVersion is null)
+        {
+            return new AffinityView("insufficient", null, [], null);
+        }
+
+        var currentHash = OfferAffinityInputs.Hash(offerEnrichHash, ctx.BasisVersion).Serialized;
+        var a = ctx.Affinities.GetValueOrDefault(o.Id);
+
+        if (a is { State: EnrichmentState.Produced } && a.InputsHash == currentHash)
+        {
+            return new AffinityView("produced", a.Score, a.Resembles, a.Rationale);
+        }
+
+        if (a is { State: EnrichmentState.Failed } && a.InputsHash == currentHash)
+        {
+            return new AffinityView("failed", null, [], null);
+        }
+
+        return new AffinityView("pending", null, [], null);
+    }
+
+    private static int? ProducedAffinityScore(AffinityView affinity) =>
+        affinity is { State: "produced", Score: { } score } ? score : null;
 
     private async Task<List<OfferListItem>> CollapseGroupsAsync(List<RankedOffer> sorted, List<Offer> materialized, CancellationToken ct)
     {
@@ -272,6 +327,8 @@ internal sealed class OfferReadService(
         OfferSort.Published => [.. ranked
             .OrderByDescending(r => r.Projected.Offer.PublishedAt ?? DateTimeOffset.MinValue)
             .ThenByDescending(r => r.Projected.Offer.FirstSuggestedAt)],
+        // 006: produced-affinity score desc, then the default rank (mirrors the Fit sort).
+        OfferSort.Affinity => [.. ranked.OrderByDescending(r => ProducedAffinityScore(r.Projected.Affinity) ?? -1).ThenByDescending(r => r.Rank)],
         // Default two-tier: produced-fit offers (CombinedRank) first, then pending/absent (DegradedRank).
         _ => [.. ranked.OrderBy(r => r.Tier).ThenByDescending(r => r.Rank).ThenByDescending(r => r.Projected.Offer.FirstSuggestedAt)],
     };
@@ -297,6 +354,8 @@ internal sealed class OfferReadService(
             EnrichmentState: p.EnrichmentState,
             Fit: p.Fit,
             FitState: p.Fit?.State,
+            Affinity: p.Affinity,
+            AffinityState: p.Affinity.State,
             CanonicalUrl: o.CanonicalUrl,
             IsNew: o.UserStatus == UserOfferStatus.New,
             IsUpdated: o.HasUnseenUpdate,
@@ -331,7 +390,10 @@ internal sealed class OfferReadService(
         bool HasProducedProfile,
         InputHash? EffectiveProfileVersion,
         IReadOnlyDictionary<OfferId, OfferEnrichment> Enrichments,
-        IReadOnlyDictionary<OfferId, OfferFit> Fits);
+        IReadOnlyDictionary<OfferId, OfferFit> Fits,
+        IReadOnlyDictionary<OfferId, OfferAffinity> Affinities,
+        int AppliedCount,
+        InputHash? BasisVersion);
 
     private sealed record Projected(
         Offer Offer,
@@ -339,7 +401,8 @@ internal sealed class OfferReadService(
         string EnrichmentState,
         string? Summary,
         IReadOnlyList<string> KeySkills,
-        FitView? Fit);
+        FitView? Fit,
+        AffinityView Affinity);
 
     private sealed record RankedOffer(Projected Projected, double Rank, int Tier);
 }

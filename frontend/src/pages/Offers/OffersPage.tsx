@@ -17,6 +17,7 @@ import { listTailored } from '../../api/tailoredCv.ts'
 import { getBoard } from '../../api/applications.ts'
 import type { PipelineStageDto } from '../../api/types.ts'
 import { ApplicationDrawer } from '../../components/ApplicationDrawer/ApplicationDrawer.tsx'
+import { OfferDetailDrawer } from '../../components/OfferDetail/OfferDetailDrawer.tsx'
 import { exportUrl } from '../../api/export.ts'
 import { ApiError } from '../../api/client.ts'
 import { poll } from '../../lib/polling.ts'
@@ -63,6 +64,7 @@ export function OffersPage() {
   const [stageByOffer, setStageByOffer] = useState<Record<string, string>>({})
   const [appStages, setAppStages] = useState<PipelineStageDto[]>([])
   const [openApplicationId, setOpenApplicationId] = useState<string | null>(null)
+  const [openDetailId, setOpenDetailId] = useState<string | null>(null)
 
   const loadTailored = useCallback(async (signal?: AbortSignal) => {
     try {
@@ -291,12 +293,19 @@ export function OffersPage() {
               <option value="rank">Best match</option>
               <option value="salary">Salary</option>
               <option value="fit">Fit</option>
+              <option value="affinity">Affinity</option>
               <option value="published">Recently published</option>
               <option value="recency">Most recent</option>
             </select>
           </label>
         </div>
       </div>
+
+      {data && data.meta.hasAffinityBasis === false && (
+        <p className="offers-page__affinity-hint muted text-sm" data-testid="affinity-hint">
+          Apply to at least 3 offers to unlock the affinity signal ({data.meta.appliedCount ?? 0}/3 so far).
+        </p>
+      )}
 
       {loading && (
         <div className="state-block">
@@ -330,10 +339,13 @@ export function OffersPage() {
               onTailoredChanged={loadTailored}
               applicationStageName={stageByOffer[offer.offerId]}
               onOpenApplication={setOpenApplicationId}
+              onOpenDetail={setOpenDetailId}
             />
           ))}
         </div>
       )}
+
+      {openDetailId && <OfferDetailDrawer offerId={openDetailId} onClose={() => setOpenDetailId(null)} />}
 
       {openApplicationId && (
         <ApplicationDrawer

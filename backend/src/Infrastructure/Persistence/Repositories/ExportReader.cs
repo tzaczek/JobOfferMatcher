@@ -1,11 +1,14 @@
 using JobOfferMatcher.Application.Export;
+using JobOfferMatcher.Domain.Enrichment;
 using Microsoft.EntityFrameworkCore;
 
 namespace JobOfferMatcher.Infrastructure.Persistence.Repositories;
 
 /// <summary>
 /// Export read side (FR-037): projects every stored offer + its source name, status, and timestamps
-/// into the portable <see cref="OfferExport"/> rows. Read-only; derived figures are not exported.
+/// into the portable <see cref="OfferExport"/> rows. Read-only; fit stays excluded, but the captured
+/// body + the current produced affinity score ARE exported (006, SC-006 — with the same input-hash +
+/// ≥3 guard as the read model, so a stale/insufficient score exports as null, never misleading).
 /// </summary>
 internal sealed class ExportReader(AppDbContext db) : IExportReader
 {
@@ -15,6 +18,23 @@ internal sealed class ExportReader(AppDbContext db) : IExportReader
         var offers = await db.Offers.AsNoTracking()
             .OrderByDescending(o => o.FirstSuggestedAt)
             .ToListAsync(ct);
+
+        // Affinity export (006): the current PRODUCED score only, guarded by input hash + the ≥3 basis.
+        var affinities = (await db.OfferAffinities.AsNoTracking().ToListAsync(ct)).ToDictionary(a => a.OfferId);
+        var appliedBasis = offers.Where(o => o.Applied).Select(o => (o.Id, o.CurrentFingerprint.Hash)).ToList();
+        var basisVersion = AppliedBasisInputs.Version(appliedBasis);
+
+        int? AffinityScoreOf(Domain.Offers.Offer o)
+        {
+            if (basisVersion is null || !affinities.TryGetValue(o.Id, out var a) || a.State != EnrichmentState.Produced)
+            {
+                return null;
+            }
+
+            var offerEnrichHash = OfferEnrichmentInputs.Hash(o.CurrentFingerprint.Hash, o.Company, o.Location, o.DescriptionHtml);
+            var currentHash = OfferAffinityInputs.Hash(offerEnrichHash, basisVersion).Serialized;
+            return a.InputsHash == currentHash ? a.Score : null;
+        }
 
         // Application tracking (005, FR-018): current stage/status/outcome + interview history per offer.
         var applications = (await db.Applications.AsNoTracking().ToListAsync(ct)).ToDictionary(a => a.OfferId);
@@ -46,6 +66,8 @@ internal sealed class ExportReader(AppDbContext db) : IExportReader
                 b.Period?.ToString().ToLowerInvariant(),
                 b.Basis.ToString().ToLowerInvariant(),
                 b.Tax.ToString().ToLowerInvariant()))],
+            o.DescriptionHtml,
+            AffinityScoreOf(o),
             o.CanonicalUrl,
             o.Availability == Domain.Offers.AvailabilityStatus.Available ? "available" : "no_longer_available",
             o.UserStatus.ToString().ToLowerInvariant(),

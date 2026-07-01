@@ -1,6 +1,7 @@
 using System.Text.Json;
 using JobOfferMatcher.Application.Abstractions;
 using JobOfferMatcher.Application.Applications;
+using JobOfferMatcher.Application.Enrichment;
 using JobOfferMatcher.Application.Scanning;
 using JobOfferMatcher.Domain.Applications;
 using JobOfferMatcher.Domain.Common;
@@ -27,6 +28,7 @@ public sealed class SetOfferApplication(
     IOfferRepository offers,
     IApplicationRepository applications,
     IPipelineStageRepository stages,
+    IEnrichmentRepository enrichment,
     IUnitOfWork unitOfWork,
     TimeProvider time)
 {
@@ -45,10 +47,19 @@ public sealed class SetOfferApplication(
             return OfferNotFound;
         }
 
+        var wasApplied = offer.Applied;
         var applied = offer.MarkApplied(appliedAt, note);
         if (applied.IsFailure)
         {
             return applied.Error;
+        }
+
+        // The applied SET changed (a new member) → the affinity basis version changed → all affinity
+        // pending (FR-002/FR-007, mirrors "weights change → all fits pending"). A pure re-mark that only
+        // edits the date/note leaves the set unchanged, so it does NOT re-pend (006).
+        if (!wasApplied)
+        {
+            await enrichment.InvalidateAllAffinityAsync(ct);
         }
 
         var payload = JsonSerializer.Serialize(new
@@ -107,6 +118,8 @@ public sealed class SetOfferApplication(
         if (changed)
         {
             await offers.AddEventAsync(OfferEvent.Create(offerId, time.GetUtcNow(), OfferEventType.ApplicationCleared), ct);
+            // The applied SET shrank → the affinity basis version changed → all affinity pending (006).
+            await enrichment.InvalidateAllAffinityAsync(ct);
         }
 
         if (application is not null)

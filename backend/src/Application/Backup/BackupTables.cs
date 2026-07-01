@@ -32,6 +32,8 @@ public static class BackupTables
         "offer_event",
         "offer_enrichment",
         "offer_fit",
+        // 006 — the affinity satellite (an offer_fit twin), FK→offers cascade (load after offers).
+        "offer_affinity",
         // 004 — opt-in tailored CV, FK→offers cascade (load after offers).
         "tailored_cv",
         // 005 — the application satellite, FK→offers AND pipeline_stage (load after both).
