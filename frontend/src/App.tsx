@@ -2,15 +2,19 @@ import { NavLink, Route, Routes } from 'react-router-dom'
 import './App.css'
 import { ThemeToggle } from './components/ThemeToggle/ThemeToggle.tsx'
 import { OffersPage } from './pages/Offers/OffersPage.tsx'
+import { ApplicationsPage } from './pages/Applications/ApplicationsPage.tsx'
 import { ScansPage } from './pages/Scans/ScansPage.tsx'
 import { CvPage } from './pages/Cv/CvPage.tsx'
+import { TailoredCvsPage } from './pages/TailoredCvs/TailoredCvsPage.tsx'
 import { SourcesPage } from './pages/Sources/SourcesPage.tsx'
 import { SettingsPage } from './pages/Settings/SettingsPage.tsx'
 
 const NAV = [
   { to: '/', label: 'Offers', end: true },
+  { to: '/applications', label: 'Applications' },
   { to: '/scans', label: 'Scans' },
   { to: '/cv', label: 'CV & Profile' },
+  { to: '/tailored-cvs', label: 'Tailored CVs' },
   { to: '/sources', label: 'Sources' },
   { to: '/settings', label: 'Settings' },
 ]
@@ -47,8 +51,10 @@ export function App() {
       <main className="container app-main">
         <Routes>
           <Route path="/" element={<OffersPage />} />
+          <Route path="/applications" element={<ApplicationsPage />} />
           <Route path="/scans" element={<ScansPage />} />
           <Route path="/cv" element={<CvPage />} />
+          <Route path="/tailored-cvs" element={<TailoredCvsPage />} />
           <Route path="/sources" element={<SourcesPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Routes>

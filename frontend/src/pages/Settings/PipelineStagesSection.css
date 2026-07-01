@@ -1,0 +1,46 @@
+.stage-editor__list {
+  list-style: none;
+  margin: 0.75rem 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.stage-editor__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.stage-editor__name {
+  flex: 1;
+  min-width: 160px;
+}
+
+.stage-editor__actions {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.stage-editor__reassign {
+  flex-basis: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.6rem;
+  background: var(--c-paper-100);
+  border-radius: var(--radius-md);
+}
+
+.stage-editor__add {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.stage-editor__add input {
+  flex: 1;
+}

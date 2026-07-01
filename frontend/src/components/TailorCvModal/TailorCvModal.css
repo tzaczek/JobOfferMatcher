@@ -1,0 +1,69 @@
+/* TailorCvModal — a wider dialog (prompt + emphasised-skill chips + an inline CV preview).
+   Reuses ApplyModal's .modal-overlay / .modal / .modal__field / .modal__actions; design tokens only. */
+
+.modal.tailor-modal {
+  max-width: min(760px, 95vw);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.tailor-modal__source {
+  margin: 0;
+  color: var(--c-ink-700);
+}
+
+.tailor-modal__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+/* Skill chips double as toggle buttons. "On" reuses the chip--skill design truth; "off" is a quiet outline. */
+.tailor-chip {
+  cursor: pointer;
+  border: 1px solid var(--c-paper-300);
+  background: var(--c-paper-0);
+  color: var(--c-ink-700);
+  font: inherit;
+  font-size: var(--fs-sm);
+}
+.tailor-chip--on {
+  border-color: transparent;
+}
+.tailor-chip:focus-visible {
+  outline: 2px solid var(--c-brand-500);
+  outline-offset: 1px;
+}
+
+.tailor-modal__prompt {
+  min-height: calc(var(--sp-7) * 2);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-normal);
+}
+
+.tailor-modal__status {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+}
+
+.tailor-modal__preview {
+  width: 100%;
+  height: 60vh;
+  border: 1px solid var(--c-paper-300);
+  border-radius: var(--radius-md);
+  background: white;
+}
+
+.tailor-modal__empty {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+/* Push Remove to the far left, away from the primary actions. */
+.tailor-modal__remove {
+  margin-right: auto;
+}

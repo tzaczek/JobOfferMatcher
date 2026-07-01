@@ -1,0 +1,444 @@
+/* The application detail modal — a large, structured surface: fixed header / lifecycle / tabs / footer
+   with a single scrolling panel in the middle. Buttons share one system (primary / ghost / danger + a
+   consistent icon button), and every add-form uses the same input-group + right-aligned action row. */
+
+.modal.app-drawer {
+  width: min(940px, 96vw);
+  max-width: 96vw;
+  height: min(86vh, 840px);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  overflow: hidden;
+}
+
+/* --- Header --- */
+.app-drawer__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.1rem 1.25rem 0.9rem;
+  border-bottom: 1px solid var(--c-paper-300);
+}
+
+.app-drawer__head-titles {
+  min-width: 0;
+}
+
+.app-drawer__title {
+  margin: 0;
+  font-size: 1.15rem;
+  line-height: 1.3;
+}
+
+.app-drawer__company {
+  margin: 0.15rem 0 0;
+  color: var(--c-ink-500);
+  font-size: 0.9rem;
+}
+
+/* --- Consistent icon button (header close + list-item deletes) --- */
+.app-drawer__icon-btn {
+  flex: none;
+  width: 1.9rem;
+  height: 1.9rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--c-paper-300);
+  border-radius: var(--radius-md);
+  background: var(--c-paper-0);
+  color: var(--c-ink-500);
+  font-size: 0.85rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.app-drawer__icon-btn:hover:not(:disabled) {
+  background: var(--c-paper-200);
+  color: var(--c-ink-900);
+}
+
+.app-drawer__icon-btn--danger:hover:not(:disabled) {
+  border-color: var(--c-danger);
+  color: var(--c-danger);
+}
+
+.app-drawer__icon-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* --- Lifecycle bar (stage + close / reopen) --- */
+.app-drawer__lifecycle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 1.25rem;
+  background: var(--c-paper-100);
+  border-bottom: 1px solid var(--c-paper-300);
+}
+
+.app-drawer__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.app-drawer__field--end {
+  align-items: flex-end;
+}
+
+.app-drawer__field-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--c-ink-400);
+}
+
+.app-drawer__field select {
+  min-width: 170px;
+}
+
+.app-drawer__close-control,
+.app-drawer__closed {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* --- Error banner --- */
+.app-drawer__error {
+  margin: 0.75rem 1.25rem 0;
+  padding: 0.55rem 0.75rem;
+  border-radius: var(--radius-md);
+  background: var(--c-danger-bg);
+  color: var(--c-danger);
+  font-size: 0.88rem;
+}
+
+/* --- Tabs --- */
+.app-drawer__tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem;
+  padding: 0.6rem 1.25rem 0;
+  border-bottom: 1px solid var(--c-paper-300);
+}
+
+.app-drawer__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.7rem;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--c-ink-500);
+  font: inherit;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.app-drawer__tab:hover {
+  color: var(--c-ink-900);
+}
+
+.app-drawer__tab--active {
+  color: var(--c-ink-900);
+  border-bottom-color: var(--c-brand-500);
+  font-weight: 600;
+}
+
+.app-drawer__tab-count {
+  min-width: 1.15rem;
+  padding: 0 0.35rem;
+  border-radius: var(--radius-pill);
+  background: var(--c-paper-200);
+  color: var(--c-ink-500);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-align: center;
+  line-height: 1.25rem;
+}
+
+.app-drawer__tab--active .app-drawer__tab-count {
+  background: var(--c-brand-100);
+  color: var(--c-brand-600);
+}
+
+/* --- Scrolling panel --- */
+.app-drawer__panel {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 1.1rem 1.25rem;
+}
+
+.app-drawer__section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.app-drawer__empty {
+  margin: 0.5rem 0;
+  padding: 1.25rem;
+  text-align: center;
+  background: var(--c-paper-100);
+  border-radius: var(--radius-md);
+}
+
+/* --- Shared add-form: input group + right-aligned action row --- */
+.app-drawer__form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.9rem;
+  background: var(--c-paper-100);
+  border: 1px solid var(--c-paper-300);
+  border-radius: var(--radius-md);
+}
+
+.app-drawer__inputs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.app-drawer__inputs > * {
+  flex: 1 1 150px;
+  min-width: 120px;
+}
+
+.app-drawer__form textarea {
+  width: 100%;
+  resize: vertical;
+}
+
+.app-drawer__form-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.app-drawer__form-actions--start {
+  justify-content: flex-start;
+}
+
+.app-drawer__upload {
+  cursor: pointer;
+}
+
+/* --- Lists --- */
+.app-drawer__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.app-drawer__item {
+  padding: 0.6rem 0.75rem;
+  background: var(--c-paper-100);
+  border: 1px solid var(--c-paper-300);
+  border-radius: var(--radius-md);
+}
+
+.app-drawer__note,
+.app-drawer__interview,
+.app-drawer__comm {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+/* Tasks */
+.app-drawer__task {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.app-drawer__task--overdue {
+  border-left: 3px solid var(--c-danger);
+}
+
+.app-drawer__task-main {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 0;
+}
+
+.app-drawer__task-done {
+  text-decoration: line-through;
+  color: var(--c-ink-400);
+}
+
+.app-drawer__task-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: none;
+}
+
+/* Documents */
+.app-drawer__doc {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.app-drawer__doc-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.app-drawer__doc-name {
+  font-weight: 500;
+  word-break: break-word;
+}
+
+.app-drawer__doc-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: none;
+}
+
+/* Interviews */
+.app-drawer__interview-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.app-drawer__interview-kind {
+  font-weight: 600;
+  margin-right: auto;
+}
+
+.app-drawer__interview-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.app-drawer__interview-outcome {
+  font-size: 0.9rem;
+}
+
+.app-drawer__outcome-form {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.2rem;
+}
+
+.app-drawer__outcome-form input {
+  flex: 1;
+}
+
+/* Communications */
+.app-drawer__comm-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.app-drawer__comm-channel {
+  font-weight: 500;
+}
+
+/* --- Timeline --- */
+.app-drawer__timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-drawer__timeline-item {
+  display: flex;
+  gap: 0.7rem;
+  padding-bottom: 0.9rem;
+  position: relative;
+}
+
+.app-drawer__timeline-item::before {
+  content: '';
+  position: absolute;
+  left: 0.32rem;
+  top: 0.9rem;
+  bottom: -0.15rem;
+  width: 2px;
+  background: var(--c-paper-300);
+}
+
+.app-drawer__timeline-item:last-child {
+  padding-bottom: 0;
+}
+
+.app-drawer__timeline-item:last-child::before {
+  display: none;
+}
+
+.app-drawer__timeline-dot {
+  flex: none;
+  width: 0.7rem;
+  height: 0.7rem;
+  margin-top: 0.25rem;
+  border-radius: 50%;
+  background: var(--c-brand-500);
+  z-index: 1;
+}
+
+.app-drawer__timeline-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.app-drawer__timeline-title {
+  font-weight: 500;
+}
+
+/* --- Footer --- */
+.app-drawer__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 1.25rem;
+  border-top: 1px solid var(--c-paper-300);
+}
+
+.app-drawer__foot-hint {
+  min-width: 0;
+}
+
+/* --- Loading / error placeholder --- */
+.app-drawer__loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  flex: 1;
+  padding: 2rem;
+}

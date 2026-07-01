@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Net;
 using JobOfferMatcher.Application.Abstractions;
+using JobOfferMatcher.Application.Applications;
 using JobOfferMatcher.Application.Cv;
 using JobOfferMatcher.Application.Enrichment;
 using JobOfferMatcher.Application.Export;
@@ -10,8 +11,11 @@ using JobOfferMatcher.Application.Scheduling;
 using JobOfferMatcher.Application.Settings;
 using JobOfferMatcher.Application.Sources;
 using JobOfferMatcher.Application.Backup;
+using JobOfferMatcher.Application.TailoredCvs;
+using JobOfferMatcher.Infrastructure.Applications;
 using JobOfferMatcher.Infrastructure.Backup;
 using JobOfferMatcher.Infrastructure.Cv;
+using JobOfferMatcher.Infrastructure.TailoredCvs;
 using JobOfferMatcher.Infrastructure.Persistence;
 using JobOfferMatcher.Infrastructure.Persistence.Repositories;
 using JobOfferMatcher.Infrastructure.Scheduling;
@@ -55,6 +59,20 @@ public static class DependencyInjection
         services.AddScoped<IRoleGroupRepository, RoleGroupRepository>();
         services.AddScoped<IExportReader, ExportReader>();
         services.AddScoped<IEnrichmentRepository, EnrichmentRepository>();
+        services.AddScoped<ITailoredCvRepository, TailoredCvRepository>();
+
+        // Application tracking (005): the satellite + pipeline repos (scoped); document attachments as
+        // flat files in the same cv-data root (singleton, like LocalCvFileStore). IApplicationBackfill is
+        // registered alongside IEnrichmentBackfill below, once the runner exists.
+        services.AddScoped<IApplicationRepository, ApplicationRepository>();
+        services.AddScoped<IPipelineStageRepository, PipelineStageRepository>();
+        services.AddSingleton<IApplicationDocumentFileStore, LocalApplicationDocumentFileStore>();
+
+        // Tailored CV (004): flat files in the same cv-data root (singleton, like LocalCvFileStore) +
+        // the in-process HTML→PDF renderer over the already-present Playwright/Chromium (singleton —
+        // the browser is launched lazily and reused; ADR-1/ADR-3).
+        services.AddSingleton<ITailoredCvFileStore, LocalTailoredCvFileStore>();
+        services.AddSingleton<IPdfRenderer, PlaywrightPdfRenderer>();
 
         // Backup/restore ports (003 ADR-1): in-process Npgsql COPY snapshot, zip archive, EF migration
         // inspector, safety pre-backup. The backups dir is resolved via Backup:StoragePath (BackupStorage).
@@ -63,6 +81,7 @@ public static class DependencyInjection
         services.AddScoped<IBackupArchiveStore, ZipBackupArchiveStore>();
         services.AddScoped<ISafetyBackupStore, LocalSafetyBackupStore>();
         services.AddScoped<IEnrichmentBackfill, EnrichmentBackfillRunner>();
+        services.AddScoped<IApplicationBackfill, ApplicationBackfillRunner>();
 
         // HTML sanitizer (default safe allow-list) for source-supplied offer descriptions (XSS, T068).
         services.AddSingleton<IHtmlSanitizer>(_ => new HtmlSanitizer());

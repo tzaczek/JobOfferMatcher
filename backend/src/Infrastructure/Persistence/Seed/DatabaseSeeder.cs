@@ -1,3 +1,4 @@
+using JobOfferMatcher.Domain.Applications;
 using JobOfferMatcher.Domain.Common.Ids;
 using JobOfferMatcher.Domain.Sources;
 using Microsoft.EntityFrameworkCore;
@@ -23,8 +24,17 @@ public static class DatabaseSeeder
     public static readonly SourceId DefaultNoFluffJobsSourceId =
         SourceId.From(new Guid("33333333-3333-3333-3333-333333333333"));
 
-    public static async Task SeedAsync(AppDbContext db, ILogger logger, CancellationToken ct = default)
+    /// <summary>
+    /// Default interview pipeline stages, seeded (in order) only when the table is empty (data-model §8,
+    /// FR-019). A reasonable single-user default derived from Constitution Principle III; fully editable.
+    /// </summary>
+    public static readonly IReadOnlyList<string> DefaultStageNames = ["Applied", "Screening", "Interviewing", "Offer"];
+
+    public static async Task SeedAsync(AppDbContext db, TimeProvider time, ILogger logger, CancellationToken ct = default)
     {
+        await SeedPipelineStagesAsync(db, time, logger, ct);
+
+
         await SeedSourceAsync(db, logger, DefaultJustJoinItSourceId, "justjoin.it", new JobSourceSearch
         {
             Categories = ["7"], // justjoin.it ".NET" category id (key "net")
@@ -57,6 +67,36 @@ public static class DatabaseSeeder
             OrderBy = "DESC",
             WorkplaceKeep = [],
         }, ct);
+    }
+
+    /// <summary>
+    /// Seed the default pipeline stages when the table is empty (seed-if-empty at the TABLE level, not
+    /// per-id — a user who deletes a default stage must not have it resurrected on restart). Public so
+    /// the no-data-loss backfill can ensure stages exist before reconstructing applications (data-model §8).
+    /// </summary>
+    public static async Task SeedPipelineStagesAsync(AppDbContext db, TimeProvider time, ILogger logger, CancellationToken ct = default)
+    {
+        if (await db.PipelineStages.AnyAsync(ct))
+        {
+            return;
+        }
+
+        var now = time.GetUtcNow();
+        for (var position = 0; position < DefaultStageNames.Count; position++)
+        {
+            var created = PipelineStage.Create(DefaultStageNames[position], position, now);
+            if (created.IsFailure)
+            {
+                // Should never happen for a hard-coded default; log rather than crash startup.
+                logger.LogError("Failed to seed default pipeline stage {Name}: {Error}", DefaultStageNames[position], created.Error);
+                return;
+            }
+
+            db.PipelineStages.Add(created.Value);
+        }
+
+        await db.SaveChangesAsync(ct);
+        logger.LogInformation("Seeded {Count} default pipeline stages.", DefaultStageNames.Count);
     }
 
     private static async Task SeedSourceAsync(

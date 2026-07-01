@@ -16,6 +16,18 @@ internal sealed class ExportReader(AppDbContext db) : IExportReader
             .OrderByDescending(o => o.FirstSuggestedAt)
             .ToListAsync(ct);
 
+        // Application tracking (005, FR-018): current stage/status/outcome + interview history per offer.
+        var applications = (await db.Applications.AsNoTracking().ToListAsync(ct)).ToDictionary(a => a.OfferId);
+        var stageNames = await db.PipelineStages.AsNoTracking().ToDictionaryAsync(s => s.Id, s => s.Name, ct);
+        var interviewsByOffer = (await db.ApplicationInterviews.AsNoTracking().ToListAsync(ct))
+            .GroupBy(i => i.OfferId)
+            .ToDictionary(
+                g => g.Key,
+                g => (IReadOnlyList<InterviewEventExport>)g
+                    .OrderBy(i => i.ScheduledAt ?? i.CreatedAt)
+                    .Select(i => new InterviewEventExport(i.Kind, i.ScheduledAt, i.Outcome))
+                    .ToList());
+
         return offers.Select(o => new OfferExport(
             o.Id.Value,
             sourceNames.GetValueOrDefault(o.SourceId, "source"),
@@ -43,7 +55,11 @@ internal sealed class ExportReader(AppDbContext db) : IExportReader
             o.RoleGroupId?.Value,
             o.FirstSeenAt,
             o.FirstSuggestedAt,
-            o.LastSeenAt))
+            o.LastSeenAt,
+            applications.TryGetValue(o.Id, out var app) && stageNames.TryGetValue(app.CurrentStageId, out var stageName) ? stageName : null,
+            app?.Status.ToString().ToLowerInvariant(),
+            app?.Outcome?.ToString().ToLowerInvariant(),
+            interviewsByOffer.GetValueOrDefault(o.Id, [])))
             .ToList();
     }
 }

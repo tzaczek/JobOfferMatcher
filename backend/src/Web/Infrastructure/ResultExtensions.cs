@@ -20,6 +20,23 @@ public static class ResultExtensions
         "SourceNotFound" => StatusCodes.Status404NotFound,
         "RoleGroupNotFound" => StatusCodes.Status404NotFound,
         "CvNotFound" => StatusCodes.Status404NotFound,
+        // Tailored CV (004).
+        "TailoredCvNotFound" => StatusCodes.Status404NotFound,
+        "NoCvOnFile" => StatusCodes.Status409Conflict,
+        "TailoredCvNotReady" => StatusCodes.Status409Conflict,
+        // Application tracking (005): not-found (404), lifecycle/steer conflicts (409), oversize file (413).
+        "ApplicationNotFound" => StatusCodes.Status404NotFound,
+        "PipelineStageNotFound" => StatusCodes.Status404NotFound,
+        "ApplicationDocumentNotFound" => StatusCodes.Status404NotFound,
+        "ApplicationTaskNotFound" => StatusCodes.Status404NotFound,
+        "ApplicationInterviewNotFound" => StatusCodes.Status404NotFound,
+        "ApplicationClosed" => StatusCodes.Status409Conflict,
+        "ApplicationAlreadyClosed" => StatusCodes.Status409Conflict,
+        "ApplicationNotClosed" => StatusCodes.Status409Conflict,
+        "ApplicationHasHistory" => StatusCodes.Status409Conflict,
+        "StageInUse" => StatusCodes.Status409Conflict,
+        "ConfirmationRequired" => StatusCodes.Status409Conflict,
+        "FileTooLarge" => StatusCodes.Status413PayloadTooLarge,
         // Backup/restore (003): a backup created by a newer app can't be represented by this build.
         "IncompatibleNewer" => StatusCodes.Status422UnprocessableEntity,
         // Mid-flight failures after validation — live data was rolled back / no partial file sent.

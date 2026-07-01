@@ -18,6 +18,8 @@ internal static class FeatureEndpoints
         api.MapSourceEndpoints();
         api.MapExportEndpoints();
         api.MapEnrichmentEndpoints();
+        api.MapTailoredCvEndpoints();
+        api.MapApplicationEndpoints();
         api.MapBackupEndpoints();
         return api;
     }

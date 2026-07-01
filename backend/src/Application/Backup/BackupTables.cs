@@ -1,7 +1,7 @@
 namespace JobOfferMatcher.Application.Backup;
 
 /// <summary>
-/// The canonical, ordered inventory of the 12 application tables a backup transports (003
+/// The canonical, ordered inventory of the application tables a backup transports (003
 /// data-model §3) — the single source consumed by snapshot, restore, and the guard tests.
 /// <para>
 /// <see cref="InsertOrder"/> is dependency order (parents before children): a restore replays
@@ -12,7 +12,7 @@ namespace JobOfferMatcher.Application.Backup;
 /// </summary>
 public static class BackupTables
 {
-    /// <summary>The 12 data tables in dependency/insert order (load parents first on restore).</summary>
+    /// <summary>The data tables in dependency/insert order (load parents first on restore).</summary>
     public static readonly IReadOnlyList<string> InsertOrder =
     [
         // Tier 1 — independent roots.
@@ -22,6 +22,8 @@ public static class BackupTables
         "schedule_config",
         "app_settings",
         "candidate_cv",
+        // 005 — the pipeline is an independent root (application references it); load before application.
+        "pipeline_stage",
         // Tier 2 — references tier 1.
         "offers",
         // Tier 3 — reference offers (hard FK, CASCADE).
@@ -30,6 +32,16 @@ public static class BackupTables
         "offer_event",
         "offer_enrichment",
         "offer_fit",
+        // 004 — opt-in tailored CV, FK→offers cascade (load after offers).
+        "tailored_cv",
+        // 005 — the application satellite, FK→offers AND pipeline_stage (load after both).
+        "application",
+        // Tier 4 — 005 application children, FK→application cascade (load after application).
+        "application_note",
+        "application_task",
+        "application_document",
+        "application_communication",
+        "application_interview",
     ];
 
     /// <summary>The schema table that is never part of the data set (history is the binary's, not the backup's).</summary>

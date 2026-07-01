@@ -6,7 +6,7 @@ namespace JobOfferMatcher.Infrastructure.Tests.Backup;
 
 /// <summary>
 /// US1 real-Postgres backup test (003 T014, FR-001/002/004, SC-001): <c>GET /api/backup</c> produces a
-/// complete archive — a manifest, a <c>db/*.copy</c> for all 12 tables, and every CV file with a
+/// complete archive — a manifest, a <c>db/*.copy</c> for all data tables, and every CV file with a
 /// matching SHA-256. An empty data set still produces a valid archive. Plus the non-destructive
 /// guarantee (T015 / SC-002): live data is byte-identical before and after a backup.
 /// </summary>
@@ -31,7 +31,7 @@ public sealed class BackupCreateTests(PostgresFixture postgres)
         var bytes = await client.GetByteArrayAsync("/api/backup");
         using var zip = BackupTestSupport.OpenZip(bytes);
 
-        // Manifest present and lists all 12 tables (each with columns + row count).
+        // Manifest present and lists all data tables (each with columns + row count).
         zip.GetEntry("manifest.json").ShouldNotBeNull();
         var manifest = ReadManifest(zip);
         manifest.Tables.Select(t => t.Name).ShouldBe(BackupTables.InsertOrder, ignoreOrder: true);

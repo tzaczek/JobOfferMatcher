@@ -13,6 +13,10 @@ public enum OfferEventType
     StatusChanged,
     Applied,
     ApplicationCleared,
+    // Application tracking (005) — stage moves / close / reopen append here (no migration: type is varchar(40)).
+    ApplicationStageChanged,
+    ApplicationClosed,
+    ApplicationReopened,
 }
 
 /// <summary>

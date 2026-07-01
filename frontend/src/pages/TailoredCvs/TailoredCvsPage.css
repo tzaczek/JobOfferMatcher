@@ -1,0 +1,60 @@
+/* Tailored CVs page — sibling style of the CV page; design tokens only. */
+
+.tailored-cvs-list {
+  list-style: none;
+  margin: var(--sp-4) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.tailored-cv-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+}
+
+.tailored-cv-row__main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  min-width: 0;
+}
+
+.tailored-cv-row__title {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+  color: var(--c-ink-900);
+  text-align: left;
+  cursor: pointer;
+}
+.tailored-cv-row__title:hover {
+  color: var(--c-brand-600);
+  text-decoration: underline;
+}
+
+.tailored-cv-row__company {
+  font-size: var(--fs-sm);
+}
+
+.tailored-cv-row__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+  margin-top: var(--sp-1);
+}
+
+.tailored-cv-row__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+}

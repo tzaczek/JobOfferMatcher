@@ -1,11 +1,11 @@
 <!-- SPECKIT START -->
-**Active feature**: `003-backup-restore` — On-Demand Backup & Restore.
+**Active feature**: `005-application-tracking` — Application & Interview Process Tracking.
 For technologies, project structure, shell commands, and other context, read the current plan:
-`specs/003-backup-restore/plan.md` (with `research.md`, `data-model.md`, `contracts/`,
-`quickstart.md` alongside it). Prior features: `001-job-offer-matcher` (collection/feed/scheduler,
-delivered, preserved unchanged) and `002-llm-enrichment-matching` (LLM enrichment via a local
-Claude-Code worker) — plans at `specs/001-job-offer-matcher/plan.md` and
-`specs/002-llm-enrichment-matching/plan.md`.
+`specs/005-application-tracking/plan.md` (with `research.md`, `data-model.md`, `contracts/`,
+`quickstart.md` alongside it). Prior features: `001-job-offer-matcher` (collection/feed/scheduler),
+`002-llm-enrichment-matching` (LLM enrichment via a local Claude-Code worker), `003-backup-restore`
+(on-demand backup/restore), and `004-tailored-cv-generation` (per-offer tailored CV) — all delivered and
+preserved unchanged; plans at `specs/00{1,2,3,4}-*/plan.md`.
 
 **Locked stack** (constitution v1.1.0): local-first, single-user **web app** — React (Vite,
 TypeScript) front end + **.NET 10** (ASP.NET Core) back end + **PostgreSQL** (EF Core,
@@ -42,4 +42,36 @@ enrichment backfill; **refuse newer**; never run `Down`). Archives **unencrypted
 `ScanOrchestrator` + `EnrichmentService` write methods); a backup runs concurrently (MVCC). Endpoints
 are loopback-only `/api/backup/*`. See `specs/003-backup-restore/plan.md` ADR-1..ADR-4. Directly
 fulfils Principle IX (recoverable); Principle IV upheld (fully local).
+
+**Load-bearing decisions (004)**: per-offer **tailored CV** generated **only** by the local Claude-Code
+worker (new `/tailor-cv` slash command draining a loopback `/api/tailored-cv` queue — **extends** the
+002 Claude-as-worker decision; backend makes no external AI call, FR-005/SC-007). Worker returns
+**tailored HTML** (re-emphasising the **uploaded 002 CV** — no fabrication, FR-006) following the
+`cv_versions` two-column layout; the **backend renders HTML→PDF in-process via the already-present
+Playwright/Chromium** (no new dependency). Opt-in, **latest-only** `tailored_cv` satellite (PK `OfferId`,
+FK→`offers` cascade); a **`GenerationVersion`** supersede guard replaces 002's input-hash (generation is
+user-driven, not auto-invalidated). Generated files are **flat** `tailored-{OfferId:N}.html/.pdf` in the
+**`cv-data` root** so 003 backup covers them unchanged — plus add `"tailored_cv"` to
+`BackupTables.InsertOrder` (after `offers`) and a **new completeness guard test** (model tables ==
+backup list). The editable prompt holds instructions+skills; the source CV is an **attached, visible,
+read-only** input (FR-003). Reuses `LoopbackOnlyFilter`, `MaintenanceGate`, `ApplyModal`,
+`EnrichmentSettings.RetryLimit`. **One** new migration. See
+`specs/004-tailored-cv-generation/plan.md` ADR-1..ADR-4. Principles III/IV/IX upheld.
+
+**Load-bearing decisions (005)**: elevate the binary per-offer **"applied" flag** into a first-class
+**application** — a `JobApplication` **satellite** aggregate (PK `OfferId`, FK→`offers` cascade, like
+`OfferFit`/`tailored_cv`) with a **user-configurable** `pipeline_stage` (seeded-if-empty defaults) and a
+**separate fixed** active/closed + outcome dimension (Accepted/Rejected/Withdrawn/NoResponse); free stage
+movement. Five typed child tables (`application_note` append-only, `application_task`, `application_document`,
+`application_communication`, `application_interview`); **stage-change/close/reopen reuse `offer_event`** (+3
+enum values, no migration) and the **timeline is derived** (a union — no timeline table). **No data lost**:
+**one** append-only migration (7 tables, schema only) + an **idempotent seed + `BackfillApplicationsAsync`**
+(an application at the first stage per applied offer; legacy `ApplicationNote` → first journal note) run at
+**startup AND on older-restore** (new `IApplicationBackfill` in `RestoreService`, mirroring 003's enrichment
+backfill; 003 restore `TRUNCATE`s the full HEAD table list). Documents are **flat** `appdoc-{id:N}` files in
+the **`cv-data` root** (003 backs them up unchanged); add the 7 tables to `BackupTables.InsertOrder` (guarded
+by the completeness test); reuse `MaintenanceGate`. Clearing "applied" **prefers closing over erasing** (409
+steer-to-Withdrawn); permanent delete is explicit + backup-recoverable. `/api/applications/*` is UI-local (no
+worker, no external AI call). See `specs/005-application-tracking/plan.md` ADR-1..ADR-5. Principles III/IV/IX
+upheld; **no existing data dropped or edited**.
 <!-- SPECKIT END -->
