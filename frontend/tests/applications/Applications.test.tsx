@@ -1,8 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { MemoryRouter, Route, Routes, useSearchParams } from 'react-router-dom'
 import { ApiError } from '../../src/api/client.ts'
-import type { ApplicationBoardDto, ApplicationDetailDto, PipelineStageDto } from '../../src/api/types.ts'
+import type {
+  ApplicationBoardDto,
+  ApplicationDetailDto,
+  PipelineStageDto,
+} from '../../src/api/types.ts'
+import { renderWithRouter } from '../testUtils.tsx'
 
 const getBoard = vi.fn()
 const listStages = vi.fn()
@@ -113,7 +119,9 @@ function detail(overrides: Partial<ApplicationDetailDto> = {}): ApplicationDetai
     outcome: null,
     appliedAt: '2026-06-20T00:00:00Z',
     closedAt: null,
-    timeline: [{ occurredAt: '2026-06-20T00:00:00Z', kind: 'note', title: 'Note added', detail: 'hello' }],
+    timeline: [
+      { occurredAt: '2026-06-20T00:00:00Z', kind: 'note', title: 'Note added', detail: 'hello' },
+    ],
     notes: [{ id: 'n1', body: 'hello', createdAt: '2026-06-20T00:00:00Z' }],
     tasks: [],
     documents: [],
@@ -132,7 +140,7 @@ describe('ApplicationsPage board', () => {
     getBoard.mockResolvedValue(board())
     listStages.mockResolvedValue(STAGES)
 
-    render(<ApplicationsPage />)
+    renderWithRouter(<ApplicationsPage />)
 
     expect(await screen.findByText('Senior .NET Engineer')).toBeInTheDocument()
     expect(screen.getByTestId('overdue-badge')).toHaveTextContent('1 overdue')
@@ -141,12 +149,26 @@ describe('ApplicationsPage board', () => {
   })
 
   it('shows the empty state when there are no applications', async () => {
-    getBoard.mockResolvedValue({ stages: STAGES.map((s) => ({ ...s, applications: [] })), closed: [] })
+    getBoard.mockResolvedValue({
+      stages: STAGES.map((s) => ({ ...s, applications: [] })),
+      closed: [],
+    })
     listStages.mockResolvedValue(STAGES)
 
-    render(<ApplicationsPage />)
+    renderWithRouter(<ApplicationsPage />)
 
     expect(await screen.findByTestId('applications-empty')).toBeInTheDocument()
+  })
+
+  it('each card links back to its offer via ?offerId=, separately from opening the drawer', async () => {
+    getBoard.mockResolvedValue(board())
+    listStages.mockResolvedValue(STAGES)
+
+    renderWithRouter(<ApplicationsPage />)
+
+    await screen.findByText('Senior .NET Engineer')
+    const links = screen.getAllByRole('link', { name: 'View offer' })
+    expect(links.map((l) => l.getAttribute('href'))).toEqual(['/?offerId=o1', '/?offerId=o2'])
   })
 })
 
@@ -157,7 +179,9 @@ describe('ApplicationDrawer lifecycle', () => {
     moveStage.mockResolvedValue(undefined)
     closeApplication.mockResolvedValue(undefined)
 
-    render(<ApplicationDrawer offerId="o1" stages={STAGES} onClose={() => {}} onChanged={() => {}} />)
+    renderWithRouter(
+      <ApplicationDrawer offerId="o1" stages={STAGES} onClose={() => {}} onChanged={() => {}} />,
+    )
 
     // Move to Screening.
     await user.selectOptions(await screen.findByTestId('stage-select'), 's-screening')
@@ -171,10 +195,14 @@ describe('ApplicationDrawer lifecycle', () => {
 
   it('reopens a closed application', async () => {
     const user = userEvent.setup()
-    getApplication.mockResolvedValue(detail({ status: 'closed', outcome: 'rejected', closedAt: '2026-06-25T00:00:00Z' }))
+    getApplication.mockResolvedValue(
+      detail({ status: 'closed', outcome: 'rejected', closedAt: '2026-06-25T00:00:00Z' }),
+    )
     reopenApplication.mockResolvedValue(undefined)
 
-    render(<ApplicationDrawer offerId="o1" stages={STAGES} onClose={() => {}} onChanged={() => {}} />)
+    renderWithRouter(
+      <ApplicationDrawer offerId="o1" stages={STAGES} onClose={() => {}} onChanged={() => {}} />,
+    )
 
     await user.click(await screen.findByRole('button', { name: 'Reopen' }))
     expect(reopenApplication).toHaveBeenCalledWith('o1')
@@ -185,14 +213,51 @@ describe('ApplicationDrawer lifecycle', () => {
     getApplication.mockResolvedValue(detail({ notes: [] }))
     addNote.mockResolvedValue({ id: 'n2', body: 'call back', createdAt: '2026-06-21T00:00:00Z' })
 
-    render(<ApplicationDrawer offerId="o1" stages={STAGES} onClose={() => {}} onChanged={() => {}} />)
+    renderWithRouter(
+      <ApplicationDrawer offerId="o1" stages={STAGES} onClose={() => {}} onChanged={() => {}} />,
+    )
 
     await user.click(await screen.findByRole('tab', { name: 'Notes' }))
     await user.type(screen.getByPlaceholderText('Add a note…'), 'call back')
     await user.click(screen.getByRole('button', { name: 'Add note' }))
     expect(addNote).toHaveBeenCalledWith('o1', 'call back')
   })
+
+  it('View offer closes the drawer and navigates to the offer', async () => {
+    const user = userEvent.setup()
+    getApplication.mockResolvedValue(detail())
+    const onClose = vi.fn()
+    render(
+      <MemoryRouter initialEntries={['/applications']}>
+        <Routes>
+          <Route
+            path="/applications"
+            element={
+              <ApplicationDrawer
+                offerId="o1"
+                stages={STAGES}
+                onClose={onClose}
+                onChanged={() => {}}
+              />
+            }
+          />
+          <Route path="/" element={<OffersRouteStub />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    await screen.findByTestId('stage-select')
+    await user.click(screen.getByRole('button', { name: 'View offer' }))
+
+    expect(onClose).toHaveBeenCalled()
+    expect(await screen.findByTestId('offers-route')).toHaveTextContent('o1')
+  })
 })
+
+function OffersRouteStub() {
+  const [params] = useSearchParams()
+  return <div data-testid="offers-route">{params.get('offerId')}</div>
+}
 
 describe('PipelineStagesSection', () => {
   it('adds a stage', async () => {

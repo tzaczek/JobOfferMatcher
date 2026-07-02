@@ -27,6 +27,13 @@
   min-width: 0;
 }
 
+.app-drawer__head-actions {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .app-drawer__title {
   margin: 0;
   font-size: 1.15rem;
@@ -55,7 +62,10 @@
   font-size: 0.85rem;
   line-height: 1;
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .app-drawer__icon-btn:hover:not(:disabled) {
@@ -145,7 +155,9 @@
   color: var(--c-ink-500);
   font: inherit;
   cursor: pointer;
-  transition: color 0.15s ease, border-color 0.15s ease;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .app-drawer__tab:hover {

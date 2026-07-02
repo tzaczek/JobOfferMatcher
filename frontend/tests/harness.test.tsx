@@ -1,8 +1,9 @@
 // Confirms the Vitest + React Testing Library + jsdom + jest-dom harness is wired up (T019a).
 import { describe, it, expect } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { screen } from '@testing-library/react'
 import { statusChipClass, fitColorVar } from '../src/theme/index.ts'
 import { OffersPage } from '../src/pages/Offers/OffersPage.tsx'
+import { renderWithRouter } from './testUtils.tsx'
 
 describe('test harness', () => {
   it('maps user status to a chip class', () => {
@@ -16,7 +17,7 @@ describe('test harness', () => {
   })
 
   it('renders a component with jest-dom matchers available', () => {
-    render(<OffersPage />)
+    renderWithRouter(<OffersPage />)
     expect(screen.getByRole('heading', { name: 'Offers' })).toBeInTheDocument()
   })
 })

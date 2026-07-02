@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import type { OfferDto, OffersResponse } from '../../src/api/types.ts'
 import { OfferCard } from '../../src/components/OfferCard/OfferCard.tsx'
+import { renderWithRouter } from '../testUtils.tsx'
 
 const listOffers = vi.fn()
 vi.mock('../../src/api/offers.ts', () => ({
@@ -36,7 +37,9 @@ function offerWithFit(): OfferDto {
     seniority: 'senior',
     requiredSkills: ['C#', '.NET'],
     niceToHaveSkills: [],
-    salaryBands: [{ min: 18000, max: 22000, currency: 'PLN', period: 'monthly', basis: 'b2b', tax: 'net' }],
+    salaryBands: [
+      { min: 18000, max: 22000, currency: 'PLN', period: 'monthly', basis: 'b2b', tax: 'net' },
+    ],
     normalizedSalary: {
       comparableMonthly: { amount: 17000, currency: 'PLN' },
       quality: 'Estimated',
@@ -82,10 +85,16 @@ describe('sort controls (T049a)', () => {
   it('renders the rank/salary/fit/recency sort options', async () => {
     const empty: OffersResponse = {
       data: [],
-      meta: { total: 0, new: 0, hasProducedProfile: true, pendingEnrichment: 0, failedEnrichment: 0 },
+      meta: {
+        total: 0,
+        new: 0,
+        hasProducedProfile: true,
+        pendingEnrichment: 0,
+        failedEnrichment: 0,
+      },
     }
     listOffers.mockResolvedValue(empty)
-    render(<OffersPage />)
+    renderWithRouter(<OffersPage />)
     await screen.findByTestId('empty-state')
 
     expect(screen.getByRole('option', { name: 'Best match' })).toBeInTheDocument()

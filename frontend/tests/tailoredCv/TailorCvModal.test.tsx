@@ -1,7 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { MemoryRouter, Route, Routes, useSearchParams } from 'react-router-dom'
 import { ApiError } from '../../src/api/client.ts'
+import { renderWithRouter } from '../testUtils.tsx'
 import type { TailoredCvDraftDto, TailoredCvDto } from '../../src/api/types.ts'
 
 const getDraft = vi.fn()
@@ -54,7 +56,9 @@ function view(overrides: Partial<TailoredCvDto> = {}): TailoredCvDto {
 const NOT_FOUND = new ApiError('TailoredCvNotFound', 'none', 404)
 
 function renderModal() {
-  render(<TailorCvModal offerId="o1" offerTitle="Senior .NET Engineer" onClose={() => {}} />)
+  renderWithRouter(
+    <TailorCvModal offerId="o1" offerTitle="Senior .NET Engineer" onClose={() => {}} />,
+  )
 }
 
 describe('TailorCvModal — draft + generate (US1, T031)', () => {
@@ -86,7 +90,10 @@ describe('TailorCvModal — draft + generate (US1, T031)', () => {
     await screen.findByTestId('tailor-prompt')
     await userEvent.click(screen.getByRole('button', { name: /^Generate$/ }))
 
-    expect(generate).toHaveBeenCalledWith('o1', { prompt: draft().prompt, emphasisedSkills: ['C#', 'PostgreSQL'] })
+    expect(generate).toHaveBeenCalledWith('o1', {
+      prompt: draft().prompt,
+      emphasisedSkills: ['C#', 'PostgreSQL'],
+    })
     expect(await screen.findByTestId('tailor-status')).toHaveTextContent(/pending/i)
   })
 
@@ -101,7 +108,10 @@ describe('TailorCvModal — draft + generate (US1, T031)', () => {
     await userEvent.click(screen.getByRole('button', { name: /^Generate$/ }))
 
     const preview = await screen.findByTestId('tailor-preview')
-    expect(preview).toHaveAttribute('src', expect.stringContaining('/api/tailored-cv/offer/o1/preview'))
+    expect(preview).toHaveAttribute(
+      'src',
+      expect.stringContaining('/api/tailored-cv/offer/o1/preview'),
+    )
   })
 
   it('shows the "add a CV first" state when there is no CV', async () => {
@@ -125,7 +135,9 @@ describe('TailorCvModal — edit + toggle + regenerate (US2, T035)', () => {
     renderModal()
     await screen.findByTestId('tailor-prompt')
 
-    getDraft.mockResolvedValueOnce(draft({ prompt: 'RECOMPOSED with Docker', emphasisedSkills: ['C#', 'PostgreSQL', 'Docker'] }))
+    getDraft.mockResolvedValueOnce(
+      draft({ prompt: 'RECOMPOSED with Docker', emphasisedSkills: ['C#', 'PostgreSQL', 'Docker'] }),
+    )
     await userEvent.click(screen.getByRole('button', { name: 'Docker' }))
 
     expect(getDraft).toHaveBeenLastCalledWith('o1', { skills: ['C#', 'PostgreSQL', 'Docker'] })
@@ -149,7 +161,10 @@ describe('TailorCvModal — edit + toggle + regenerate (US2, T035)', () => {
     expect(screen.getByTestId('tailor-prompt')).toHaveValue('EDITED PROMPT')
 
     await userEvent.click(screen.getByRole('button', { name: /^Regenerate$/ }))
-    expect(generate).toHaveBeenCalledWith('o1', { prompt: 'EDITED PROMPT', emphasisedSkills: ['C#', 'PostgreSQL', 'Docker'] })
+    expect(generate).toHaveBeenCalledWith('o1', {
+      prompt: 'EDITED PROMPT',
+      emphasisedSkills: ['C#', 'PostgreSQL', 'Docker'],
+    })
   })
 })
 
@@ -179,5 +194,42 @@ describe('TailorCvModal — download (US3, T040)', () => {
     expect(dl).not.toBeDisabled()
     await userEvent.click(dl)
     expect(downloadTailoredPdf).toHaveBeenCalledWith('o1')
+  })
+})
+
+function OffersRouteStub() {
+  const [params] = useSearchParams()
+  return <div data-testid="offers-route">{params.get('offerId')}</div>
+}
+
+describe('TailorCvModal — view offer (reach-back navigation)', () => {
+  beforeEach(() => {
+    getDraft.mockReset()
+    getTailored.mockReset()
+  })
+
+  it('closes the modal and navigates to the offer', async () => {
+    getDraft.mockResolvedValue(draft())
+    getTailored.mockRejectedValue(NOT_FOUND)
+    const onClose = vi.fn()
+    render(
+      <MemoryRouter initialEntries={['/tailored-cvs']}>
+        <Routes>
+          <Route
+            path="/tailored-cvs"
+            element={
+              <TailorCvModal offerId="o1" offerTitle="Senior .NET Engineer" onClose={onClose} />
+            }
+          />
+          <Route path="/" element={<OffersRouteStub />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    await screen.findByTestId('tailor-prompt')
+    await userEvent.click(screen.getByRole('button', { name: 'View offer' }))
+
+    expect(onClose).toHaveBeenCalled()
+    expect(await screen.findByTestId('offers-route')).toHaveTextContent('o1')
   })
 })

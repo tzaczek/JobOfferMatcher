@@ -11,6 +11,23 @@
   box-shadow: var(--shadow-md);
 }
 
+/* A few-second flash drawing the eye to a card scrolled into view via a deep link (e.g. from Tailored CVs). */
+.offer-card--highlight {
+  animation: offer-card-highlight 2.5s ease-out;
+}
+@keyframes offer-card-highlight {
+  0% {
+    box-shadow:
+      0 0 0 3px var(--c-brand-500),
+      var(--shadow-lg);
+    background-color: var(--c-brand-100);
+  }
+  100% {
+    box-shadow: var(--shadow-sm);
+    background-color: var(--c-paper-0);
+  }
+}
+
 .offer-card__head {
   display: flex;
   justify-content: space-between;

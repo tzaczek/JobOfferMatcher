@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { useNavigate } from 'react-router-dom'
 import { ApiError } from '../../api/client.ts'
 import {
   deleteTailored,
@@ -46,6 +47,12 @@ export function TailorCvModal({ offerId, offerTitle, onClose, onChanged }: Tailo
 
   const titleId = useId()
   const dialogRef = useRef<HTMLDivElement>(null)
+  const navigate = useNavigate()
+
+  function handleViewOffer() {
+    onClose()
+    navigate(`/?offerId=${offerId}`)
+  }
 
   // Load the prefilled draft + any existing tailored CV on open.
   useEffect(() => {
@@ -118,7 +125,9 @@ export function TailorCvModal({ offerId, offerTitle, onClose, onChanged }: Tailo
   }, [onClose, generating])
 
   async function toggleSkill(skill: string) {
-    const next = selected.includes(skill) ? selected.filter((s) => s !== skill) : [...selected, skill]
+    const next = selected.includes(skill)
+      ? selected.filter((s) => s !== skill)
+      : [...selected, skill]
     setSelected(next)
     // While the prompt is still the unedited default, a toggle recomposes the visible prompt (FR-004).
     if (!promptEdited) {
@@ -171,7 +180,12 @@ export function TailorCvModal({ offerId, offerTitle, onClose, onChanged }: Tailo
   const isProduced = tailored?.state === 'produced'
 
   return createPortal(
-    <div className="modal-overlay" onMouseDown={() => { if (!generating) onClose() }}>
+    <div
+      className="modal-overlay"
+      onMouseDown={() => {
+        if (!generating) onClose()
+      }}
+    >
       <div
         className="modal tailor-modal"
         role="dialog"
@@ -183,12 +197,18 @@ export function TailorCvModal({ offerId, offerTitle, onClose, onChanged }: Tailo
         <h2 className="modal__title" id={titleId}>
           Tailor CV
         </h2>
-        <p className="modal__subtitle muted text-sm">{offerTitle}</p>
+        <div className="tailor-modal__subtitle-row">
+          <p className="modal__subtitle muted text-sm">{offerTitle}</p>
+          <button type="button" className="btn btn--ghost btn--sm" onClick={handleViewOffer}>
+            View offer
+          </button>
+        </div>
 
         {noCv ? (
           <div className="tailor-modal__empty">
             <p className="cv-msg cv-msg--warn">
-              Add a CV first — there is nothing to tailor from. Upload one on <strong>CV &amp; Profile</strong>.
+              Add a CV first — there is nothing to tailor from. Upload one on{' '}
+              <strong>CV &amp; Profile</strong>.
             </p>
             <div className="modal__actions">
               <button type="button" className="btn btn--ghost btn--sm" onClick={onClose}>
@@ -210,7 +230,8 @@ export function TailorCvModal({ offerId, offerTitle, onClose, onChanged }: Tailo
         ) : draft ? (
           <>
             <p className="tailor-modal__source text-sm">
-              Source CV: <strong>{draft.sourceCv?.fileName}</strong> <span className="muted">(read-only)</span>
+              Source CV: <strong>{draft.sourceCv?.fileName}</strong>{' '}
+              <span className="muted">(read-only)</span>
             </p>
 
             <div className="modal__field">
@@ -223,7 +244,9 @@ export function TailorCvModal({ offerId, offerTitle, onClose, onChanged }: Tailo
                       key={skill}
                       type="button"
                       aria-pressed={on}
-                      className={on ? 'chip chip--skill tailor-chip tailor-chip--on' : 'chip tailor-chip'}
+                      className={
+                        on ? 'chip chip--skill tailor-chip tailor-chip--on' : 'chip tailor-chip'
+                      }
                       onClick={() => toggleSkill(skill)}
                     >
                       {skill}
@@ -286,11 +309,21 @@ export function TailorCvModal({ offerId, offerTitle, onClose, onChanged }: Tailo
 
             <div className="modal__actions">
               {hasExisting && (
-                <button type="button" className="btn btn--ghost btn--sm tailor-modal__remove" onClick={handleRemove} disabled={generating}>
+                <button
+                  type="button"
+                  className="btn btn--ghost btn--sm tailor-modal__remove"
+                  onClick={handleRemove}
+                  disabled={generating}
+                >
                   Remove
                 </button>
               )}
-              <button type="button" className="btn btn--ghost btn--sm" onClick={onClose} disabled={generating}>
+              <button
+                type="button"
+                className="btn btn--ghost btn--sm"
+                onClick={onClose}
+                disabled={generating}
+              >
                 Close
               </button>
               {isProduced && (
@@ -303,7 +336,12 @@ export function TailorCvModal({ offerId, offerTitle, onClose, onChanged }: Tailo
                   {downloadBusy ? 'Downloading…' : 'Download PDF'}
                 </button>
               )}
-              <button type="button" className="btn btn--primary btn--sm" onClick={handleGenerate} disabled={generating || !prompt.trim()}>
+              <button
+                type="button"
+                className="btn btn--primary btn--sm"
+                onClick={handleGenerate}
+                disabled={generating || !prompt.trim()}
+              >
                 {generating ? 'Starting…' : hasExisting ? 'Regenerate' : 'Generate'}
               </button>
             </div>

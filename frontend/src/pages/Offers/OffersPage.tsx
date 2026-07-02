@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import type {
   ApplicationInput,
   OffersQuery,
@@ -9,7 +10,12 @@ import type {
   TailoredCvState,
   UserStatus,
 } from '../../api/types.ts'
-import { clearOfferApplied, listOffers, markOfferApplied, setOfferStatus } from '../../api/offers.ts'
+import {
+  clearOfferApplied,
+  listOffers,
+  markOfferApplied,
+  setOfferStatus,
+} from '../../api/offers.ts'
 import { getScanStatus, runScan } from '../../api/scans.ts'
 import { listSources } from '../../api/sources.ts'
 import { setRoleGroupOverride } from '../../api/roleGroups.ts'
@@ -65,6 +71,33 @@ export function OffersPage() {
   const [appStages, setAppStages] = useState<PipelineStageDto[]>([])
   const [openApplicationId, setOpenApplicationId] = useState<string | null>(null)
   const [openDetailId, setOpenDetailId] = useState<string | null>(null)
+  const [highlightOfferId, setHighlightOfferId] = useState<string | null>(null)
+
+  // Deep-link support: `?offerId=` (e.g. from the Tailored CVs page) scrolls the matching card into
+  // view and flashes it — once the feed has loaded, so the card actually exists in the DOM. It does
+  // NOT open the drawer (which would just hide the card the link is meant to surface).
+  const [searchParams, setSearchParams] = useSearchParams()
+  useEffect(() => {
+    const offerId = searchParams.get('offerId')
+    if (!offerId || !data) return
+
+    const card = document.querySelector<HTMLElement>(`[data-offer-id="${offerId}"]`)
+    if (card) {
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      setHighlightOfferId(offerId)
+    }
+
+    const next = new URLSearchParams(searchParams)
+    next.delete('offerId')
+    setSearchParams(next, { replace: true })
+  }, [searchParams, data, setSearchParams])
+
+  // Runs independently of the effect above so clearing the URL param doesn't cut the flash short.
+  useEffect(() => {
+    if (!highlightOfferId) return
+    const timer = setTimeout(() => setHighlightOfferId(null), 2500)
+    return () => clearTimeout(timer)
+  }, [highlightOfferId])
 
   const loadTailored = useCallback(async (signal?: AbortSignal) => {
     try {
@@ -80,7 +113,8 @@ export function OffersPage() {
     try {
       const board = await getBoard(signal)
       const map: Record<string, string> = {}
-      for (const stage of board.stages) for (const card of stage.applications) map[card.offerId] = stage.name
+      for (const stage of board.stages)
+        for (const card of stage.applications) map[card.offerId] = stage.name
       for (const card of board.closed) map[card.offerId] = 'Closed'
       setStageByOffer(map)
       setAppStages(board.stages.map((s) => ({ id: s.id, name: s.name, position: s.position })))
@@ -216,20 +250,44 @@ export function OffersPage() {
         <div>
           <h1 className="page-title">Offers</h1>
           <p className="page-subtitle">
-            {data ? `${data.meta.total} offers · ${data.meta.new} new` : 'Your ranked feed of collected offers.'}
+            {data
+              ? `${data.meta.total} offers · ${data.meta.new} new`
+              : 'Your ranked feed of collected offers.'}
+            {loading && data && (
+              <span
+                className="spinner offers-page__refresh-spinner"
+                aria-label="Refreshing"
+                data-testid="offers-refreshing"
+              />
+            )}
           </p>
         </div>
         <div className="offers-page__header-actions">
           <div className="offers-page__export" role="group" aria-label="Export offers">
             <span className="offers-page__export-label muted text-sm">Export</span>
-            <a className="btn btn--ghost btn--sm" href={exportUrl('json')} download aria-label="Export offers as JSON">
+            <a
+              className="btn btn--ghost btn--sm"
+              href={exportUrl('json')}
+              download
+              aria-label="Export offers as JSON"
+            >
               JSON
             </a>
-            <a className="btn btn--ghost btn--sm" href={exportUrl('csv')} download aria-label="Export offers as CSV">
+            <a
+              className="btn btn--ghost btn--sm"
+              href={exportUrl('csv')}
+              download
+              aria-label="Export offers as CSV"
+            >
               CSV
             </a>
           </div>
-          <button type="button" className="btn btn--primary" onClick={handleRunScan} disabled={scanning}>
+          <button
+            type="button"
+            className="btn btn--primary"
+            onClick={handleRunScan}
+            disabled={scanning}
+          >
             {scanning ? 'Scanning…' : 'Run scan'}
           </button>
         </div>
@@ -257,14 +315,18 @@ export function OffersPage() {
           </button>
           <button
             type="button"
-            className={view === 'applied' ? 'segmented__btn segmented__btn--active' : 'segmented__btn'}
+            className={
+              view === 'applied' ? 'segmented__btn segmented__btn--active' : 'segmented__btn'
+            }
             onClick={() => setView('applied')}
           >
             Applied
           </button>
           <button
             type="button"
-            className={view === 'dismissed' ? 'segmented__btn segmented__btn--active' : 'segmented__btn'}
+            className={
+              view === 'dismissed' ? 'segmented__btn segmented__btn--active' : 'segmented__btn'
+            }
             onClick={() => setView('dismissed')}
           >
             Dismissed
@@ -289,7 +351,11 @@ export function OffersPage() {
           </label>
           <label className="offers-page__select" htmlFor="offers-sort">
             Sort
-            <select id="offers-sort" value={sort} onChange={(e) => setSort(e.target.value as SortKey)}>
+            <select
+              id="offers-sort"
+              value={sort}
+              onChange={(e) => setSort(e.target.value as SortKey)}
+            >
               <option value="rank">Best match</option>
               <option value="salary">Salary</option>
               <option value="fit">Fit</option>
@@ -303,11 +369,12 @@ export function OffersPage() {
 
       {data && data.meta.hasAffinityBasis === false && (
         <p className="offers-page__affinity-hint muted text-sm" data-testid="affinity-hint">
-          Apply to at least 3 offers to unlock the affinity signal ({data.meta.appliedCount ?? 0}/3 so far).
+          Apply to at least 3 offers to unlock the affinity signal ({data.meta.appliedCount ?? 0}/3
+          so far).
         </p>
       )}
 
-      {loading && (
+      {loading && !data && (
         <div className="state-block">
           <span className="spinner" aria-label="Loading" /> Loading offers…
         </div>
@@ -325,7 +392,9 @@ export function OffersPage() {
         </div>
       )}
 
-      {!loading && !error && data && data.data.length > 0 && (
+      {data && data.data.length > 0 && (
+        // Stays mounted through background reloads (e.g. after "Interested"/"Dismiss") so the DOM —
+        // and the user's scroll position — doesn't collapse and jump to the top while refetching.
         <div className="offers-page__feed">
           {data.data.map((offer) => (
             <OfferCard
@@ -340,12 +409,15 @@ export function OffersPage() {
               applicationStageName={stageByOffer[offer.offerId]}
               onOpenApplication={setOpenApplicationId}
               onOpenDetail={setOpenDetailId}
+              highlighted={offer.offerId === highlightOfferId}
             />
           ))}
         </div>
       )}
 
-      {openDetailId && <OfferDetailDrawer offerId={openDetailId} onClose={() => setOpenDetailId(null)} />}
+      {openDetailId && (
+        <OfferDetailDrawer offerId={openDetailId} onClose={() => setOpenDetailId(null)} />
+      )}
 
       {openApplicationId && (
         <ApplicationDrawer

@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import type { OfferDto, OffersResponse } from '../../src/api/types.ts'
 import { OfferCard } from '../../src/components/OfferCard/OfferCard.tsx'
+import { renderWithRouter } from '../testUtils.tsx'
 
 const listOffers = vi.fn()
 vi.mock('../../src/api/offers.ts', () => ({
@@ -21,7 +22,9 @@ vi.mock('../../src/api/enrichment.ts', () => ({
   }),
   triggerRerun: vi.fn(),
 }))
-vi.mock('../../src/api/sources.ts', () => ({ listSources: vi.fn().mockResolvedValue({ data: [] }) }))
+vi.mock('../../src/api/sources.ts', () => ({
+  listSources: vi.fn().mockResolvedValue({ data: [] }),
+}))
 vi.mock('../../src/api/roleGroups.ts', () => ({ setRoleGroupOverride: vi.fn() }))
 
 import { OffersPage } from '../../src/pages/Offers/OffersPage.tsx'
@@ -74,10 +77,16 @@ describe('"no new offers" state (T038b / FR-032)', () => {
   it('shows a clear caught-up message, not an error', async () => {
     const empty: OffersResponse = {
       data: [],
-      meta: { total: 5, new: 0, hasProducedProfile: false, pendingEnrichment: 0, failedEnrichment: 0 },
+      meta: {
+        total: 5,
+        new: 0,
+        hasProducedProfile: false,
+        pendingEnrichment: 0,
+        failedEnrichment: 0,
+      },
     }
     listOffers.mockResolvedValue(empty)
-    render(<OffersPage />)
+    renderWithRouter(<OffersPage />)
 
     // Default status is "all"; the page mounts, then we surface the empty state.
     const block = await screen.findByTestId('empty-state')

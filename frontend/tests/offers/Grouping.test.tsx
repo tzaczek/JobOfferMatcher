@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import type { OfferDto, OffersResponse, SourceDto } from '../../src/api/types.ts'
 import { OfferCard } from '../../src/components/OfferCard/OfferCard.tsx'
+import { renderWithRouter } from '../testUtils.tsx'
 
 const listOffers = vi.fn()
 const listSources = vi.fn()
@@ -133,10 +134,13 @@ describe('OffersPage source filter (T065)', () => {
   it('renders an option per source from listSources plus an "All sources" option', async () => {
     listOffers.mockResolvedValue(EMPTY)
     listSources.mockResolvedValue({
-      data: [makeSource({ id: 's1', name: 'JustJoin.it' }), makeSource({ id: 's2', name: 'Pracuj.pl' })],
+      data: [
+        makeSource({ id: 's1', name: 'JustJoin.it' }),
+        makeSource({ id: 's2', name: 'Pracuj.pl' }),
+      ],
     })
 
-    render(<OffersPage />)
+    renderWithRouter(<OffersPage />)
 
     expect(await screen.findByRole('option', { name: 'JustJoin.it' })).toBeInTheDocument()
     expect(screen.getByRole('option', { name: 'Pracuj.pl' })).toBeInTheDocument()
@@ -147,10 +151,13 @@ describe('OffersPage source filter (T065)', () => {
     listOffers.mockResolvedValue(EMPTY)
     listSources.mockResolvedValue({ data: [makeSource({ id: 's2', name: 'Pracuj.pl' })] })
 
-    render(<OffersPage />)
+    renderWithRouter(<OffersPage />)
     // Initial load passes no source.
     await waitFor(() =>
-      expect(listOffers).toHaveBeenCalledWith(expect.objectContaining({ source: undefined }), expect.anything()),
+      expect(listOffers).toHaveBeenCalledWith(
+        expect.objectContaining({ source: undefined }),
+        expect.anything(),
+      ),
     )
 
     fireEvent.change(await screen.findByLabelText('Filter by source'), { target: { value: 's2' } })
@@ -178,14 +185,22 @@ describe('OffersPage split-group flow (T065)', () => {
       data: [
         makeOffer({
           roleGroupId: 'rg-9',
-          groupMembers: [{ offerId: 'o2', sourceName: 'Pracuj.pl', canonicalUrl: 'https://pracuj.pl/o2' }],
+          groupMembers: [
+            { offerId: 'o2', sourceName: 'Pracuj.pl', canonicalUrl: 'https://pracuj.pl/o2' },
+          ],
         }),
       ],
-      meta: { total: 1, new: 0, hasProducedProfile: false, pendingEnrichment: 0, failedEnrichment: 0 },
+      meta: {
+        total: 1,
+        new: 0,
+        hasProducedProfile: false,
+        pendingEnrichment: 0,
+        failedEnrichment: 0,
+      },
     }
     listOffers.mockResolvedValue(grouped)
 
-    render(<OffersPage />)
+    renderWithRouter(<OffersPage />)
 
     const split = await screen.findByRole('button', { name: /not the same role/i })
     const callsBefore = listOffers.mock.calls.length

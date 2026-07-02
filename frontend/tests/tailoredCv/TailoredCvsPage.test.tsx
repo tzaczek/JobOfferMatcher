@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import type { OfferDto, TailoredCvDto } from '../../src/api/types.ts'
+import { renderWithRouter } from '../testUtils.tsx'
 
 const listTailored = vi.fn()
 const deleteTailored = vi.fn()
@@ -71,8 +72,10 @@ describe('TailoredCvsPage (US4, T047)', () => {
   })
 
   it('lists every tailored CV with a reach-back to its offer', async () => {
-    listTailored.mockResolvedValue({ data: [tcv(), tcv({ offerId: 'o2', offerTitle: 'Backend Developer' })] })
-    render(<TailoredCvsPage />)
+    listTailored.mockResolvedValue({
+      data: [tcv(), tcv({ offerId: 'o2', offerTitle: 'Backend Developer' })],
+    })
+    renderWithRouter(<TailoredCvsPage />)
 
     expect(await screen.findByText('Senior .NET Engineer')).toBeInTheDocument()
     expect(screen.getByText('Backend Developer')).toBeInTheDocument()
@@ -83,9 +86,20 @@ describe('TailoredCvsPage (US4, T047)', () => {
 
   it('shows an empty state when there are none', async () => {
     listTailored.mockResolvedValue({ data: [] })
-    render(<TailoredCvsPage />)
+    renderWithRouter(<TailoredCvsPage />)
 
     expect(await screen.findByTestId('empty-state')).toBeInTheDocument()
+  })
+
+  it('each row links back to its offer via ?offerId=', async () => {
+    listTailored.mockResolvedValue({
+      data: [tcv(), tcv({ offerId: 'o2', offerTitle: 'Backend Developer' })],
+    })
+    renderWithRouter(<TailoredCvsPage />)
+
+    await screen.findByText('Senior .NET Engineer')
+    const links = screen.getAllByRole('link', { name: 'View offer' })
+    expect(links.map((l) => l.getAttribute('href'))).toEqual(['/?offerId=o1', '/?offerId=o2'])
   })
 })
 

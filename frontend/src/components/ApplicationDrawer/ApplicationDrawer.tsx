@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
+import { useNavigate } from 'react-router-dom'
 import type {
   ApplicationDetailDto,
   ApplicationOutcome,
@@ -65,6 +66,12 @@ export function ApplicationDrawer({ offerId, stages, onClose, onChanged }: Props
   const [error, setError] = useState<string | null>(null)
   const titleId = useId()
   const dialogRef = useRef<HTMLDivElement>(null)
+  const navigate = useNavigate()
+
+  function handleViewOffer() {
+    onClose()
+    navigate(`/?offerId=${offerId}`)
+  }
 
   const refresh = useCallback(async () => {
     setDetail(await getApplication(offerId))
@@ -74,7 +81,10 @@ export function ApplicationDrawer({ offerId, stages, onClose, onChanged }: Props
     let active = true
     getApplication(offerId)
       .then((d) => active && setDetail(d))
-      .catch((e) => active && setError(e instanceof ApiError ? e.message : 'Failed to load the application.'))
+      .catch(
+        (e) =>
+          active && setError(e instanceof ApiError ? e.message : 'Failed to load the application.'),
+      )
     return () => {
       active = false
     }
@@ -123,7 +133,12 @@ export function ApplicationDrawer({ offerId, stages, onClose, onChanged }: Props
     : { timeline: 0, notes: 0, tasks: 0, documents: 0, interviews: 0, contact: 0 }
 
   return createPortal(
-    <div className="modal-overlay" onMouseDown={() => { if (!busy) onClose() }}>
+    <div
+      className="modal-overlay"
+      onMouseDown={() => {
+        if (!busy) onClose()
+      }}
+    >
       <div
         className="modal app-drawer"
         role="dialog"
@@ -148,9 +163,25 @@ export function ApplicationDrawer({ offerId, stages, onClose, onChanged }: Props
                 </h2>
                 <p className="app-drawer__company">{detail.company}</p>
               </div>
-              <button type="button" className="app-drawer__icon-btn" onClick={onClose} aria-label="Close drawer" disabled={busy}>
-                ✕
-              </button>
+              <div className="app-drawer__head-actions">
+                <button
+                  type="button"
+                  className="btn btn--ghost btn--sm"
+                  onClick={handleViewOffer}
+                  disabled={busy}
+                >
+                  View offer
+                </button>
+                <button
+                  type="button"
+                  className="app-drawer__icon-btn"
+                  onClick={onClose}
+                  aria-label="Close drawer"
+                  disabled={busy}
+                >
+                  ✕
+                </button>
+              </div>
             </header>
 
             <div className="app-drawer__lifecycle">
@@ -171,7 +202,10 @@ export function ApplicationDrawer({ offerId, stages, onClose, onChanged }: Props
               </label>
 
               {detail.status === 'active' ? (
-                <CloseControl busy={busy} onClose={(outcome) => void run(() => closeApplication(offerId, outcome))} />
+                <CloseControl
+                  busy={busy}
+                  onClose={(outcome) => void run(() => closeApplication(offerId, outcome))}
+                />
               ) : (
                 <div className="app-drawer__field app-drawer__field--end">
                   <span className="app-drawer__field-label">Outcome</span>
@@ -205,18 +239,28 @@ export function ApplicationDrawer({ offerId, stages, onClose, onChanged }: Props
                   type="button"
                   role="tab"
                   aria-selected={tab === t.id}
-                  className={tab === t.id ? 'app-drawer__tab app-drawer__tab--active' : 'app-drawer__tab'}
+                  className={
+                    tab === t.id ? 'app-drawer__tab app-drawer__tab--active' : 'app-drawer__tab'
+                  }
                   onClick={() => setTab(t.id)}
                 >
                   {t.label}
-                  {counts[t.id] > 0 && <span className="app-drawer__tab-count">{counts[t.id]}</span>}
+                  {counts[t.id] > 0 && (
+                    <span className="app-drawer__tab-count">{counts[t.id]}</span>
+                  )}
                 </button>
               ))}
             </div>
 
             <div className="app-drawer__panel">
               {tab === 'timeline' && <TimelinePanel detail={detail} />}
-              {tab === 'notes' && <NotesPanel detail={detail} busy={busy} onAdd={(body) => run(() => addNote(offerId, body))} />}
+              {tab === 'notes' && (
+                <NotesPanel
+                  detail={detail}
+                  busy={busy}
+                  onAdd={(body) => run(() => addNote(offerId, body))}
+                />
+              )}
               {tab === 'tasks' && (
                 <TasksPanel
                   detail={detail}
@@ -245,18 +289,28 @@ export function ApplicationDrawer({ offerId, stages, onClose, onChanged }: Props
                 />
               )}
               {tab === 'contact' && (
-                <ContactPanel detail={detail} busy={busy} onAdd={(c) => run(() => addCommunication(offerId, c))} />
+                <ContactPanel
+                  detail={detail}
+                  busy={busy}
+                  onAdd={(c) => run(() => addCommunication(offerId, c))}
+                />
               )}
             </div>
 
             <footer className="app-drawer__foot">
-              <span className="app-drawer__foot-hint muted text-sm">Deleting is permanent — recoverable only from a backup.</span>
+              <span className="app-drawer__foot-hint muted text-sm">
+                Deleting is permanent — recoverable only from a backup.
+              </span>
               <button
                 type="button"
                 className="btn btn--danger btn--sm"
                 disabled={busy}
                 onClick={() => {
-                  if (window.confirm('Permanently delete this application and all its history? This cannot be undone (only a backup can restore it).')) {
+                  if (
+                    window.confirm(
+                      'Permanently delete this application and all its history? This cannot be undone (only a backup can restore it).',
+                    )
+                  ) {
                     void run(() => deleteApplication(offerId)).then(onClose)
                   }
                 }}
@@ -272,20 +326,36 @@ export function ApplicationDrawer({ offerId, stages, onClose, onChanged }: Props
   )
 }
 
-function CloseControl({ busy, onClose }: { busy: boolean; onClose: (outcome: ApplicationOutcome) => void }) {
+function CloseControl({
+  busy,
+  onClose,
+}: {
+  busy: boolean
+  onClose: (outcome: ApplicationOutcome) => void
+}) {
   const [outcome, setOutcome] = useState<ApplicationOutcome>('rejected')
   return (
     <div className="app-drawer__field app-drawer__field--end">
       <span className="app-drawer__field-label">Close as</span>
       <div className="app-drawer__close-control">
-        <select value={outcome} disabled={busy} onChange={(e) => setOutcome(e.target.value as ApplicationOutcome)} data-testid="close-outcome">
+        <select
+          value={outcome}
+          disabled={busy}
+          onChange={(e) => setOutcome(e.target.value as ApplicationOutcome)}
+          data-testid="close-outcome"
+        >
           {OUTCOMES.map((o) => (
             <option key={o.value} value={o.value}>
               {o.label}
             </option>
           ))}
         </select>
-        <button type="button" className="btn btn--primary btn--sm" disabled={busy} onClick={() => onClose(outcome)}>
+        <button
+          type="button"
+          className="btn btn--primary btn--sm"
+          disabled={busy}
+          onClick={() => onClose(outcome)}
+        >
           Close
         </button>
       </div>
@@ -305,9 +375,13 @@ function TimelinePanel({ detail }: { detail: ApplicationDetailDto }) {
         <li key={i} className="app-drawer__timeline-item">
           <span className="app-drawer__timeline-dot" aria-hidden="true" />
           <div className="app-drawer__timeline-body">
-            <span className="app-drawer__timeline-when muted text-sm">{new Date(e.occurredAt).toLocaleString()}</span>
+            <span className="app-drawer__timeline-when muted text-sm">
+              {new Date(e.occurredAt).toLocaleString()}
+            </span>
             <span className="app-drawer__timeline-title">{e.title}</span>
-            {e.detail && <span className="app-drawer__timeline-detail muted text-sm">{e.detail}</span>}
+            {e.detail && (
+              <span className="app-drawer__timeline-detail muted text-sm">{e.detail}</span>
+            )}
           </div>
         </li>
       ))}
@@ -315,7 +389,15 @@ function TimelinePanel({ detail }: { detail: ApplicationDetailDto }) {
   )
 }
 
-function NotesPanel({ detail, busy, onAdd }: { detail: ApplicationDetailDto; busy: boolean; onAdd: (body: string) => void }) {
+function NotesPanel({
+  detail,
+  busy,
+  onAdd,
+}: {
+  detail: ApplicationDetailDto
+  busy: boolean
+  onAdd: (body: string) => void
+}) {
   const [body, setBody] = useState('')
   return (
     <div className="app-drawer__section">
@@ -329,9 +411,20 @@ function NotesPanel({ detail, busy, onAdd }: { detail: ApplicationDetailDto; bus
           }
         }}
       >
-        <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={2} maxLength={4000} placeholder="Add a note…" disabled={busy} />
+        <textarea
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+          rows={2}
+          maxLength={4000}
+          placeholder="Add a note…"
+          disabled={busy}
+        />
         <div className="app-drawer__form-actions">
-          <button type="submit" className="btn btn--primary btn--sm" disabled={busy || !body.trim()}>
+          <button
+            type="submit"
+            className="btn btn--primary btn--sm"
+            disabled={busy || !body.trim()}
+          >
             Add note
           </button>
         </div>
@@ -381,11 +474,27 @@ function TasksPanel({
         }}
       >
         <div className="app-drawer__inputs">
-          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Task title" maxLength={300} disabled={busy} />
-          <input type="date" value={dueAt} onChange={(e) => setDueAt(e.target.value)} disabled={busy} aria-label="Due date" />
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Task title"
+            maxLength={300}
+            disabled={busy}
+          />
+          <input
+            type="date"
+            value={dueAt}
+            onChange={(e) => setDueAt(e.target.value)}
+            disabled={busy}
+            aria-label="Due date"
+          />
         </div>
         <div className="app-drawer__form-actions">
-          <button type="submit" className="btn btn--primary btn--sm" disabled={busy || !title.trim()}>
+          <button
+            type="submit"
+            className="btn btn--primary btn--sm"
+            disabled={busy || !title.trim()}
+          >
             Add task
           </button>
         </div>
@@ -395,15 +504,43 @@ function TasksPanel({
       ) : (
         <ul className="app-drawer__list" data-testid="tasks-list">
           {detail.tasks.map((t) => (
-            <li key={t.id} className={t.overdue ? 'app-drawer__item app-drawer__task app-drawer__task--overdue' : 'app-drawer__item app-drawer__task'}>
+            <li
+              key={t.id}
+              className={
+                t.overdue
+                  ? 'app-drawer__item app-drawer__task app-drawer__task--overdue'
+                  : 'app-drawer__item app-drawer__task'
+              }
+            >
               <label className="app-drawer__task-main">
-                <input type="checkbox" checked={t.completedAt != null} disabled={busy} onChange={(e) => onToggle(t.id, e.target.checked)} />
-                <span className={t.completedAt ? 'app-drawer__task-done' : undefined}>{t.title}</span>
+                <input
+                  type="checkbox"
+                  checked={t.completedAt != null}
+                  disabled={busy}
+                  onChange={(e) => onToggle(t.id, e.target.checked)}
+                />
+                <span className={t.completedAt ? 'app-drawer__task-done' : undefined}>
+                  {t.title}
+                </span>
               </label>
               <span className="app-drawer__task-meta">
-                {t.dueAt && <span className="muted text-sm">Due {new Date(t.dueAt).toLocaleDateString()}</span>}
-                {t.overdue && <span className="chip chip--failed" data-testid="task-overdue">Overdue</span>}
-                <button type="button" className="app-drawer__icon-btn app-drawer__icon-btn--danger" disabled={busy} onClick={() => onDelete(t.id)} aria-label="Delete task">
+                {t.dueAt && (
+                  <span className="muted text-sm">
+                    Due {new Date(t.dueAt).toLocaleDateString()}
+                  </span>
+                )}
+                {t.overdue && (
+                  <span className="chip chip--failed" data-testid="task-overdue">
+                    Overdue
+                  </span>
+                )}
+                <button
+                  type="button"
+                  className="app-drawer__icon-btn app-drawer__icon-btn--danger"
+                  disabled={busy}
+                  onClick={() => onDelete(t.id)}
+                  aria-label="Delete task"
+                >
                   ✕
                 </button>
               </span>
@@ -457,10 +594,21 @@ function DocumentsPanel({
                 <span className="muted text-sm">{formatBytes(d.sizeBytes)}</span>
               </div>
               <span className="app-drawer__doc-actions">
-                <button type="button" className="btn btn--ghost btn--sm" disabled={busy} onClick={() => void onDownload(d.id, d.originalFileName)}>
+                <button
+                  type="button"
+                  className="btn btn--ghost btn--sm"
+                  disabled={busy}
+                  onClick={() => void onDownload(d.id, d.originalFileName)}
+                >
                   Download
                 </button>
-                <button type="button" className="app-drawer__icon-btn app-drawer__icon-btn--danger" disabled={busy} onClick={() => onDelete(d.id)} aria-label="Delete document">
+                <button
+                  type="button"
+                  className="app-drawer__icon-btn app-drawer__icon-btn--danger"
+                  disabled={busy}
+                  onClick={() => onDelete(d.id)}
+                  aria-label="Delete document"
+                >
                   ✕
                 </button>
               </span>
@@ -481,7 +629,12 @@ function InterviewsPanel({
 }: {
   detail: ApplicationDetailDto
   busy: boolean
-  onAdd: (i: { kind: string; scheduledAt?: string | null; interviewer?: string | null; notes?: string | null }) => void
+  onAdd: (i: {
+    kind: string
+    scheduledAt?: string | null
+    interviewer?: string | null
+    notes?: string | null
+  }) => void
   onOutcome: (id: string, outcome: string) => void
   onDelete: (id: string) => void
 }) {
@@ -507,12 +660,34 @@ function InterviewsPanel({
         }}
       >
         <div className="app-drawer__inputs">
-          <input value={kind} onChange={(e) => setKind(e.target.value)} placeholder="Kind (e.g. phone screen)" maxLength={80} disabled={busy} />
-          <input type="datetime-local" value={scheduledAt} onChange={(e) => setScheduledAt(e.target.value)} disabled={busy} aria-label="Scheduled at" />
-          <input value={interviewer} onChange={(e) => setInterviewer(e.target.value)} placeholder="Interviewer" maxLength={200} disabled={busy} />
+          <input
+            value={kind}
+            onChange={(e) => setKind(e.target.value)}
+            placeholder="Kind (e.g. phone screen)"
+            maxLength={80}
+            disabled={busy}
+          />
+          <input
+            type="datetime-local"
+            value={scheduledAt}
+            onChange={(e) => setScheduledAt(e.target.value)}
+            disabled={busy}
+            aria-label="Scheduled at"
+          />
+          <input
+            value={interviewer}
+            onChange={(e) => setInterviewer(e.target.value)}
+            placeholder="Interviewer"
+            maxLength={200}
+            disabled={busy}
+          />
         </div>
         <div className="app-drawer__form-actions">
-          <button type="submit" className="btn btn--primary btn--sm" disabled={busy || !kind.trim()}>
+          <button
+            type="submit"
+            className="btn btn--primary btn--sm"
+            disabled={busy || !kind.trim()}
+          >
             Add interview
           </button>
         </div>
@@ -525,13 +700,25 @@ function InterviewsPanel({
             <li key={i.id} className="app-drawer__item app-drawer__interview">
               <div className="app-drawer__interview-head">
                 <span className="app-drawer__interview-kind">{i.kind}</span>
-                {i.upcoming && <span className="chip chip--updated" data-testid="interview-upcoming">Upcoming</span>}
-                <button type="button" className="app-drawer__icon-btn app-drawer__icon-btn--danger" disabled={busy} onClick={() => onDelete(i.id)} aria-label="Delete interview">
+                {i.upcoming && (
+                  <span className="chip chip--updated" data-testid="interview-upcoming">
+                    Upcoming
+                  </span>
+                )}
+                <button
+                  type="button"
+                  className="app-drawer__icon-btn app-drawer__icon-btn--danger"
+                  disabled={busy}
+                  onClick={() => onDelete(i.id)}
+                  aria-label="Delete interview"
+                >
                   ✕
                 </button>
               </div>
               <div className="app-drawer__interview-meta">
-                {i.scheduledAt && <span className="muted text-sm">{new Date(i.scheduledAt).toLocaleString()}</span>}
+                {i.scheduledAt && (
+                  <span className="muted text-sm">{new Date(i.scheduledAt).toLocaleString()}</span>
+                )}
                 {i.interviewer && <span className="muted text-sm">with {i.interviewer}</span>}
               </div>
               {i.outcome ? (
@@ -560,7 +747,12 @@ function OutcomeForm({ busy, onSave }: { busy: boolean; onSave: (outcome: string
         }
       }}
     >
-      <input value={value} onChange={(e) => setValue(e.target.value)} placeholder="Record outcome…" disabled={busy} />
+      <input
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        placeholder="Record outcome…"
+        disabled={busy}
+      />
       <button type="submit" className="btn btn--ghost btn--sm" disabled={busy || !value.trim()}>
         Save
       </button>
@@ -575,7 +767,12 @@ function ContactPanel({
 }: {
   detail: ApplicationDetailDto
   busy: boolean
-  onAdd: (c: { occurredAt: string; direction: CommunicationDirection; channel: string; summary: string }) => void
+  onAdd: (c: {
+    occurredAt: string
+    direction: CommunicationDirection
+    channel: string
+    summary: string
+  }) => void
 }) {
   const [occurredAt, setOccurredAt] = useState('')
   const [direction, setDirection] = useState<CommunicationDirection>('inbound')
@@ -589,7 +786,9 @@ function ContactPanel({
           e.preventDefault()
           if (channel.trim() && summary.trim()) {
             onAdd({
-              occurredAt: occurredAt ? new Date(occurredAt).toISOString() : new Date().toISOString(),
+              occurredAt: occurredAt
+                ? new Date(occurredAt).toISOString()
+                : new Date().toISOString(),
               direction,
               channel: channel.trim(),
               summary: summary.trim(),
@@ -601,16 +800,43 @@ function ContactPanel({
         }}
       >
         <div className="app-drawer__inputs">
-          <input type="datetime-local" value={occurredAt} onChange={(e) => setOccurredAt(e.target.value)} disabled={busy} aria-label="Occurred at" />
-          <select value={direction} onChange={(e) => setDirection(e.target.value as CommunicationDirection)} disabled={busy} aria-label="Direction">
+          <input
+            type="datetime-local"
+            value={occurredAt}
+            onChange={(e) => setOccurredAt(e.target.value)}
+            disabled={busy}
+            aria-label="Occurred at"
+          />
+          <select
+            value={direction}
+            onChange={(e) => setDirection(e.target.value as CommunicationDirection)}
+            disabled={busy}
+            aria-label="Direction"
+          >
             <option value="inbound">Inbound</option>
             <option value="outbound">Outbound</option>
           </select>
-          <input value={channel} onChange={(e) => setChannel(e.target.value)} placeholder="Channel (email, phone…)" maxLength={80} disabled={busy} />
+          <input
+            value={channel}
+            onChange={(e) => setChannel(e.target.value)}
+            placeholder="Channel (email, phone…)"
+            maxLength={80}
+            disabled={busy}
+          />
         </div>
-        <textarea value={summary} onChange={(e) => setSummary(e.target.value)} rows={2} placeholder="Summary" disabled={busy} />
+        <textarea
+          value={summary}
+          onChange={(e) => setSummary(e.target.value)}
+          rows={2}
+          placeholder="Summary"
+          disabled={busy}
+        />
         <div className="app-drawer__form-actions">
-          <button type="submit" className="btn btn--primary btn--sm" disabled={busy || !channel.trim() || !summary.trim()}>
+          <button
+            type="submit"
+            className="btn btn--primary btn--sm"
+            disabled={busy || !channel.trim() || !summary.trim()}
+          >
             Log communication
           </button>
         </div>

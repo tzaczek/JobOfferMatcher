@@ -20,6 +20,11 @@ if (!window.matchMedia) {
     }) as unknown as MediaQueryList
 }
 
+// jsdom doesn't implement scrollIntoView; the deep-link-to-offer flow calls it to reveal a card.
+if (!window.HTMLElement.prototype.scrollIntoView) {
+  window.HTMLElement.prototype.scrollIntoView = vi.fn()
+}
+
 afterEach(() => {
   cleanup()
 })

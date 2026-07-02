@@ -1,7 +1,18 @@
 import { useState } from 'react'
 import type { ApplicationInput, OfferDto, TailoredCvState, UserStatus } from '../../api/types.ts'
-import { statusChipClass, qualityChipClass, enrichmentStatusClass, fitColorVar } from '../../theme/index.ts'
-import { formatDate, formatDateUtc, formatSalaryBand, formatWorkMode, titleCase } from '../../lib/format.ts'
+import {
+  statusChipClass,
+  qualityChipClass,
+  enrichmentStatusClass,
+  fitColorVar,
+} from '../../theme/index.ts'
+import {
+  formatDate,
+  formatDateUtc,
+  formatSalaryBand,
+  formatWorkMode,
+  titleCase,
+} from '../../lib/format.ts'
 import { ApplyModal } from '../ApplyModal/ApplyModal.tsx'
 import { TailorCvModal } from '../TailorCvModal/TailorCvModal.tsx'
 import './OfferCard.css'
@@ -25,6 +36,8 @@ interface OfferCardProps {
   onOpenApplication?: (offerId: string) => void
   /** Open the offer-detail drawer (full body + facts) — US2. */
   onOpenDetail?: (offerId: string) => void
+  /** Briefly flashes the card — used to draw the eye after a deep-link scroll-to (e.g. from Tailored CVs). */
+  highlighted?: boolean
 }
 
 export function OfferCard({
@@ -38,6 +51,7 @@ export function OfferCard({
   applicationStageName,
   onOpenApplication,
   onOpenDetail,
+  highlighted,
 }: OfferCardProps) {
   const hasSalary = offer.salaryBands.length > 0
   const groupMembers = offer.groupMembers ?? []
@@ -61,7 +75,11 @@ export function OfferCard({
   }
 
   return (
-    <article className="card offer-card" data-testid="offer-card">
+    <article
+      className={highlighted ? 'card offer-card offer-card--highlight' : 'card offer-card'}
+      data-testid="offer-card"
+      data-offer-id={offer.offerId}
+    >
       <div className="offer-card__head">
         <div className="offer-card__title-block">
           {onOpenDetail ? (
@@ -163,12 +181,17 @@ export function OfferCard({
         <div className="offer-card__fit" data-testid="offer-fit">
           {offer.fit.state === 'produced' && offer.fit.score != null ? (
             <>
-              <span className="offer-card__fit-score" style={{ color: fitColorVar(offer.fit.score) }}>
+              <span
+                className="offer-card__fit-score"
+                style={{ color: fitColorVar(offer.fit.score) }}
+              >
                 {offer.fit.score}
                 <span className="offer-card__fit-max">/100 fit</span>
               </span>
               <div className="offer-card__fit-lists">
-                {offer.fit.rationale && <p className="offer-card__fit-rationale">{offer.fit.rationale}</p>}
+                {offer.fit.rationale && (
+                  <p className="offer-card__fit-rationale">{offer.fit.rationale}</p>
+                )}
                 {(offer.fit.matched ?? []).length > 0 && (
                   <div className="offer-card__chips">
                     {(offer.fit.matched ?? []).map((m) => (
@@ -201,7 +224,10 @@ export function OfferCard({
         <div className="offer-card__affinity" data-testid="offer-affinity">
           {offer.affinity.state === 'produced' && offer.affinity.score != null ? (
             <>
-              <span className="offer-card__affinity-score" style={{ color: fitColorVar(offer.affinity.score) }}>
+              <span
+                className="offer-card__affinity-score"
+                style={{ color: fitColorVar(offer.affinity.score) }}
+              >
                 {offer.affinity.score}
                 <span className="offer-card__affinity-max">/100 affinity</span>
               </span>
@@ -224,7 +250,10 @@ export function OfferCard({
             <span className={enrichmentStatusClass('failed')}>Affinity unavailable</span>
           ) : offer.affinity.state === 'insufficient' ? (
             // Cold start — a distinct state, NOT "pending" (FR-006): affinity needs ≥ 3 applied offers.
-            <span className="offer-card__affinity-insufficient muted text-sm" data-testid="affinity-insufficient">
+            <span
+              className="offer-card__affinity-insufficient muted text-sm"
+              data-testid="affinity-insufficient"
+            >
               Affinity — not enough application history yet
             </span>
           ) : (
@@ -277,15 +306,28 @@ export function OfferCard({
       )}
 
       <div className="offer-card__actions">
-        <a className="btn btn--primary btn--sm" href={offer.canonicalUrl} target="_blank" rel="noreferrer noopener">
+        <a
+          className="btn btn--primary btn--sm"
+          href={offer.canonicalUrl}
+          target="_blank"
+          rel="noreferrer noopener"
+        >
           View offer ↗
         </a>
         {onOpenDetail && (
-          <button type="button" className="btn btn--ghost btn--sm" onClick={() => onOpenDetail(offer.offerId)}>
+          <button
+            type="button"
+            className="btn btn--ghost btn--sm"
+            onClick={() => onOpenDetail(offer.offerId)}
+          >
             Details
           </button>
         )}
-        <button type="button" className="btn btn--ghost btn--sm" onClick={() => setShowTailorModal(true)}>
+        <button
+          type="button"
+          className="btn btn--ghost btn--sm"
+          onClick={() => setShowTailorModal(true)}
+        >
           {tailoredState ? 'Tailored CV' : 'Tailor CV'}
         </button>
         <div className="offer-card__status-actions">
@@ -331,7 +373,11 @@ export function OfferCard({
                     Application
                   </button>
                 )}
-                <button type="button" className="btn btn--ghost btn--sm" onClick={() => setShowApplyModal(true)}>
+                <button
+                  type="button"
+                  className="btn btn--ghost btn--sm"
+                  onClick={() => setShowApplyModal(true)}
+                >
                   Edit application
                 </button>
                 {onClearApplied && (
@@ -345,7 +391,11 @@ export function OfferCard({
                 )}
               </>
             ) : (
-              <button type="button" className="btn btn--ghost btn--sm" onClick={() => setShowApplyModal(true)}>
+              <button
+                type="button"
+                className="btn btn--ghost btn--sm"
+                onClick={() => setShowApplyModal(true)}
+              >
                 Mark applied
               </button>
             ))}

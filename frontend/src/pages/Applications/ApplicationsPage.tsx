@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
-import type { ApplicationCardDto, ApplicationBoardDto, ApplicationOutcome, PipelineStageDto } from '../../api/types.ts'
+import { Link } from 'react-router-dom'
+import type {
+  ApplicationCardDto,
+  ApplicationBoardDto,
+  ApplicationOutcome,
+  PipelineStageDto,
+} from '../../api/types.ts'
 import { getBoard, listStages } from '../../api/applications.ts'
 import { ApiError } from '../../api/client.ts'
 import { formatDateUtc } from '../../lib/format.ts'
@@ -50,7 +56,9 @@ export function ApplicationsPage() {
       <div className="applications-page__header">
         <h1 className="page-title">Applications</h1>
         <p className="page-subtitle">
-          {board ? `${totalActive} active · ${board.closed.length} closed` : 'Your interview pipeline.'}
+          {board
+            ? `${totalActive} active · ${board.closed.length} closed`
+            : 'Your interview pipeline.'}
         </p>
       </div>
 
@@ -83,9 +91,15 @@ export function ApplicationsPage() {
                 </div>
                 <div className="board__cards">
                   {stage.applications.map((card) => (
-                    <BoardCard key={card.offerId} card={card} onOpen={() => setOpenOfferId(card.offerId)} />
+                    <BoardCard
+                      key={card.offerId}
+                      card={card}
+                      onOpen={() => setOpenOfferId(card.offerId)}
+                    />
                   ))}
-                  {stage.applications.length === 0 && <p className="board__empty muted text-sm">—</p>}
+                  {stage.applications.length === 0 && (
+                    <p className="board__empty muted text-sm">—</p>
+                  )}
                 </div>
               </div>
             ))}
@@ -96,7 +110,12 @@ export function ApplicationsPage() {
               <h2 className="board-closed__title">Closed</h2>
               <div className="board-closed__cards">
                 {board.closed.map((card) => (
-                  <BoardCard key={card.offerId} card={card} closed onOpen={() => setOpenOfferId(card.offerId)} />
+                  <BoardCard
+                    key={card.offerId}
+                    card={card}
+                    closed
+                    onOpen={() => setOpenOfferId(card.offerId)}
+                  />
                 ))}
               </div>
             </div>
@@ -116,27 +135,46 @@ export function ApplicationsPage() {
   )
 }
 
-function BoardCard({ card, closed, onOpen }: { card: ApplicationCardDto; closed?: boolean; onOpen: () => void }) {
+function BoardCard({
+  card,
+  closed,
+  onOpen,
+}: {
+  card: ApplicationCardDto
+  closed?: boolean
+  onOpen: () => void
+}) {
   const outcome = card.outcome ? OUTCOME[card.outcome] : null
   return (
-    <button type="button" className="board-card" data-testid="board-card" onClick={onOpen}>
-      <span className="board-card__title">{card.title}</span>
-      <span className="board-card__company muted text-sm">{card.company}</span>
-      {card.appliedAt && <span className="muted text-sm">Applied {formatDateUtc(card.appliedAt)}</span>}
-      <span className="board-card__badges">
-        {closed && outcome && <span className={outcome.chip}>{outcome.label}</span>}
-        {card.overdueTaskCount > 0 && (
-          <span className="chip chip--failed" data-testid="overdue-badge">
-            {card.overdueTaskCount} overdue
-          </span>
+    <div className="board-card" data-testid="board-card">
+      <button type="button" className="board-card__main" onClick={onOpen}>
+        <span className="board-card__title">{card.title}</span>
+        <span className="board-card__company muted text-sm">{card.company}</span>
+        {card.appliedAt && (
+          <span className="muted text-sm">Applied {formatDateUtc(card.appliedAt)}</span>
         )}
-        {card.overdueTaskCount === 0 && card.outstandingTaskCount > 0 && (
-          <span className="chip chip--pending" data-testid="task-badge">
-            {card.outstandingTaskCount} to do
-          </span>
-        )}
-        {card.nextInterviewAt && <span className="chip chip--updated">Interview {formatDateUtc(card.nextInterviewAt)}</span>}
-      </span>
-    </button>
+        <span className="board-card__badges">
+          {closed && outcome && <span className={outcome.chip}>{outcome.label}</span>}
+          {card.overdueTaskCount > 0 && (
+            <span className="chip chip--failed" data-testid="overdue-badge">
+              {card.overdueTaskCount} overdue
+            </span>
+          )}
+          {card.overdueTaskCount === 0 && card.outstandingTaskCount > 0 && (
+            <span className="chip chip--pending" data-testid="task-badge">
+              {card.outstandingTaskCount} to do
+            </span>
+          )}
+          {card.nextInterviewAt && (
+            <span className="chip chip--updated">
+              Interview {formatDateUtc(card.nextInterviewAt)}
+            </span>
+          )}
+        </span>
+      </button>
+      <Link className="board-card__view-offer" to={`/?offerId=${card.offerId}`}>
+        View offer
+      </Link>
+    </div>
   )
 }
