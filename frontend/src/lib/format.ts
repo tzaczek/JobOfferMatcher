@@ -45,6 +45,42 @@ export function formatDate(iso: string | null): string {
   return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
+/** Coarse relative time ("just now", "12m ago", "2h ago", "3d ago") for the feed's freshness line (#5). */
+export function formatRelativeTime(iso: string | null): string {
+  if (!iso) return ''
+  const then = new Date(iso).getTime()
+  if (Number.isNaN(then)) return ''
+  const sec = Math.round((Date.now() - then) / 1000)
+  if (sec < 45) return 'just now'
+  const min = Math.round(sec / 60)
+  if (min < 60) return `${min}m ago`
+  const hr = Math.round(min / 60)
+  if (hr < 24) return `${hr}h ago`
+  const day = Math.round(hr / 24)
+  if (day < 30) return `${day}d ago`
+  const mon = Math.round(day / 30)
+  if (mon < 12) return `${mon}mo ago`
+  return `${Math.round(mon / 12)}y ago`
+}
+
+/**
+ * Map a scan outcome to its status-chip class — shared by the feed's freshness line (#5) and the
+ * Scans history table so both tint identically (complete = interested/green, partial = updated/amber,
+ * failed = missing/red, unknown = neutral).
+ */
+export function outcomeClass(outcome: string | null): string {
+  switch (outcome) {
+    case 'complete':
+      return 'chip chip--interested'
+    case 'partial':
+      return 'chip chip--updated'
+    case 'failed':
+      return 'chip chip--missing'
+    default:
+      return 'chip chip--unavailable'
+  }
+}
+
 /**
  * Format a calendar date that is stored as a midnight-UTC instant (e.g. the applied date), rendering
  * in UTC so what the user picked == what is shown — regardless of the viewer's timezone.

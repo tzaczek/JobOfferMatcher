@@ -78,6 +78,26 @@
   background: var(--c-paper-0);
   color: var(--c-ink-900);
 }
+.offers-page__search {
+  font: inherit;
+  font-size: var(--fs-sm);
+  padding: var(--sp-1) var(--sp-3);
+  min-width: 200px;
+  border: 1px solid var(--c-paper-300);
+  border-radius: var(--radius-sm);
+  background: var(--c-paper-0);
+  color: var(--c-ink-900);
+}
+.offers-page__search::placeholder {
+  color: var(--c-ink-400);
+}
+
+.offers-page__freshness {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-top: var(--sp-1);
+}
 
 .offers-page__feed {
   display: flex;

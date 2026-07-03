@@ -116,71 +116,8 @@
   font-size: var(--fs-sm);
   line-height: 1.5;
 }
-.offer-card__key-skills {
-  margin-top: 2px;
-}
 
-.offer-card__fit {
-  display: flex;
-  gap: var(--sp-3);
-  align-items: flex-start;
-  padding: var(--sp-3);
-  background: var(--c-paper-50);
-  border-radius: var(--radius-md);
-}
-.offer-card__fit-rationale {
-  margin: 0;
-  color: var(--c-ink-700);
-  font-size: var(--fs-sm);
-  line-height: 1.4;
-}
-.offer-card__fit-score {
-  font-size: var(--fs-xl);
-  font-weight: var(--fw-bold);
-  white-space: nowrap;
-}
-.offer-card__fit-max {
-  font-size: var(--fs-xs);
-  font-weight: var(--fw-medium);
-  color: var(--c-ink-400);
-  margin-left: 2px;
-}
-.offer-card__fit-lists {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-1);
-}
-
-/* Affinity — a distinct second signal beside fit (feature 006), same layout, own accent border. */
-.offer-card__affinity {
-  display: flex;
-  gap: var(--sp-3);
-  align-items: flex-start;
-  padding: var(--sp-3);
-  background: var(--c-paper-50);
-  border-left: 3px solid var(--c-accent-400, var(--c-ink-300));
-  border-radius: var(--radius-md);
-}
-.offer-card__affinity-score {
-  font-size: var(--fs-xl);
-  font-weight: var(--fw-bold);
-  white-space: nowrap;
-}
-.offer-card__affinity-max {
-  font-size: var(--fs-xs);
-  font-weight: var(--fw-medium);
-  color: var(--c-ink-400);
-  margin-left: 2px;
-}
-.offer-card__affinity-lists {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-1);
-}
-.offer-card__affinity-insufficient {
-  font-style: italic;
-}
-.offer-card__chips,
+/* Fit/affinity breakdown rules moved to components/OfferSignals/OfferSignals.css (finding #10). */
 .offer-card__skills {
   display: flex;
   flex-wrap: wrap;
@@ -239,4 +176,16 @@
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: var(--sp-2);
+}
+
+/* Inline undo stub left in a dismissed card's slot for ~6s (finding #6) — one compact row. */
+.offer-card--dismissed-stub {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-5);
+}
+.offer-card__dismissed-label {
+  font-style: italic;
 }

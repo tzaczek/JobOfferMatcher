@@ -48,7 +48,10 @@ describe('OfferCard affinity — a distinct signal beside fit (T028)', () => {
     expect(screen.getByTestId('offer-affinity')).toBeInTheDocument()
     expect(screen.getByText('74')).toBeInTheDocument()
     expect(screen.getByText('/100 affinity')).toBeInTheDocument()
+    // Rationale is collapsed behind a "Why this affinity" expander on the card (finding #7).
+    expect(screen.getByText('Why this affinity')).toBeInTheDocument()
     expect(screen.getByText('Close to the roles you applied to.')).toBeInTheDocument()
+    // Resembles chips stay visible on the card (they are not part of the deduped skills row).
     expect(screen.getByText('senior .NET')).toBeInTheDocument()
   })
 

@@ -23,3 +23,9 @@
   gap: var(--sp-2);
   margin-left: auto;
 }
+.enrichment-indicator__error {
+  flex: 1 1 100%;
+  color: var(--c-danger);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+}

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import type { ScanRunSummaryDto } from '../../api/types.ts'
 import { listScans } from '../../api/scans.ts'
 import { ApiError } from '../../api/client.ts'
-import { formatDate } from '../../lib/format.ts'
+import { formatDate, outcomeClass } from '../../lib/format.ts'
 import './ScansPage.css'
 
 export function ScansPage() {
@@ -58,7 +58,7 @@ export function ScansPage() {
                 <td>{formatDate(run.startedAt)}</td>
                 <td>{run.trigger}</td>
                 <td>
-                  <span className={`chip chip--${outcomeClass(run.outcome)}`}>{run.outcome ?? 'running'}</span>
+                  <span className={outcomeClass(run.outcome)}>{run.outcome ?? 'running'}</span>
                 </td>
                 <td>{run.counts.collected}</td>
                 <td>{run.counts.new}</td>
@@ -72,11 +72,4 @@ export function ScansPage() {
       )}
     </section>
   )
-}
-
-function outcomeClass(outcome: string | null): string {
-  if (outcome === 'complete') return 'interested'
-  if (outcome === 'partial') return 'updated'
-  if (outcome === 'failed') return 'missing'
-  return 'unavailable'
 }

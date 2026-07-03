@@ -1,11 +1,6 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { ApplicationInput, OfferDto, TailoredCvState, UserStatus } from '../../api/types.ts'
-import {
-  statusChipClass,
-  qualityChipClass,
-  enrichmentStatusClass,
-  fitColorVar,
-} from '../../theme/index.ts'
+import { statusChipClass, qualityChipClass, enrichmentStatusClass } from '../../theme/index.ts'
 import {
   formatDate,
   formatDateUtc,
@@ -15,6 +10,7 @@ import {
 } from '../../lib/format.ts'
 import { ApplyModal } from '../ApplyModal/ApplyModal.tsx'
 import { TailorCvModal } from '../TailorCvModal/TailorCvModal.tsx'
+import { AffinityBreakdown, FitBreakdown } from '../OfferSignals/OfferSignals.tsx'
 import './OfferCard.css'
 
 interface OfferCardProps {
@@ -38,6 +34,8 @@ interface OfferCardProps {
   onOpenDetail?: (offerId: string) => void
   /** Briefly flashes the card — used to draw the eye after a deep-link scroll-to (e.g. from Tailored CVs). */
   highlighted?: boolean
+  /** Hide the per-card affinity cold-start line — the page-level hint already covers it (finding #7). */
+  suppressAffinityInsufficient?: boolean
 }
 
 export function OfferCard({
@@ -52,12 +50,34 @@ export function OfferCard({
   onOpenApplication,
   onOpenDetail,
   highlighted,
+  suppressAffinityInsufficient,
 }: OfferCardProps) {
   const hasSalary = offer.salaryBands.length > 0
   const groupMembers = offer.groupMembers ?? []
   const roleGroupId = offer.roleGroupId
   const enrichmentState = offer.enrichmentState ?? 'pending'
-  const keySkills = offer.keySkills ?? []
+
+  // One deduped skills row (finding #7): missing first (red), then matched/key/required (neutral),
+  // case-insensitively first-seen-wins — so a skill from multiple sources shows exactly once.
+  const skillRow = useMemo(() => {
+    const seen = new Set<string>()
+    const row: { label: string; missing: boolean }[] = []
+    const add = (skill: string, missing: boolean) => {
+      const key = skill.toLowerCase()
+      if (seen.has(key)) return
+      seen.add(key)
+      row.push({ label: skill, missing })
+    }
+    ;(offer.fit?.missing ?? []).forEach((s) => add(s, true))
+    ;(offer.fit?.matched ?? []).forEach((s) => add(s, false))
+    ;(offer.keySkills ?? []).forEach((s) => add(s, false))
+    offer.requiredSkills.forEach((s) => add(s, false))
+    return row
+  }, [offer.fit, offer.keySkills, offer.requiredSkills])
+
+  const showAffinity =
+    offer.affinity &&
+    !(suppressAffinityInsufficient && offer.affinity.state === 'insufficient')
 
   const [showApplyModal, setShowApplyModal] = useState(false)
   const [savingApply, setSavingApply] = useState(false)
@@ -133,18 +153,7 @@ export function OfferCard({
 
       <div className="offer-card__enrichment" data-testid="offer-enrichment">
         {enrichmentState === 'produced' && offer.summary ? (
-          <>
-            <p className="offer-card__summary">{offer.summary}</p>
-            {keySkills.length > 0 && (
-              <div className="offer-card__chips offer-card__key-skills">
-                {keySkills.map((s) => (
-                  <span key={s} className="chip chip--skill">
-                    {s}
-                  </span>
-                ))}
-              </div>
-            )}
-          </>
+          <p className="offer-card__summary">{offer.summary}</p>
         ) : enrichmentState === 'failed' ? (
           <span className={enrichmentStatusClass('failed')}>Summary unavailable</span>
         ) : (
@@ -177,96 +186,15 @@ export function OfferCard({
         )}
       </div>
 
-      {offer.fit && (
-        <div className="offer-card__fit" data-testid="offer-fit">
-          {offer.fit.state === 'produced' && offer.fit.score != null ? (
-            <>
-              <span
-                className="offer-card__fit-score"
-                style={{ color: fitColorVar(offer.fit.score) }}
-              >
-                {offer.fit.score}
-                <span className="offer-card__fit-max">/100 fit</span>
-              </span>
-              <div className="offer-card__fit-lists">
-                {offer.fit.rationale && (
-                  <p className="offer-card__fit-rationale">{offer.fit.rationale}</p>
-                )}
-                {(offer.fit.matched ?? []).length > 0 && (
-                  <div className="offer-card__chips">
-                    {(offer.fit.matched ?? []).map((m) => (
-                      <span key={m} className="chip chip--skill">
-                        {m}
-                      </span>
-                    ))}
-                  </div>
-                )}
-                {(offer.fit.missing ?? []).length > 0 && (
-                  <div className="offer-card__chips">
-                    {(offer.fit.missing ?? []).map((m) => (
-                      <span key={m} className="chip chip--missing">
-                        missing: {m}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </>
-          ) : offer.fit.state === 'failed' ? (
-            <span className={enrichmentStatusClass('failed')}>Fit unavailable</span>
-          ) : (
-            <span className={enrichmentStatusClass('pending')}>Fit pending</span>
-          )}
-        </div>
-      )}
+      {offer.fit && <FitBreakdown fit={offer.fit} compact />}
 
-      {offer.affinity && (
-        <div className="offer-card__affinity" data-testid="offer-affinity">
-          {offer.affinity.state === 'produced' && offer.affinity.score != null ? (
-            <>
-              <span
-                className="offer-card__affinity-score"
-                style={{ color: fitColorVar(offer.affinity.score) }}
-              >
-                {offer.affinity.score}
-                <span className="offer-card__affinity-max">/100 affinity</span>
-              </span>
-              <div className="offer-card__affinity-lists">
-                {offer.affinity.rationale && (
-                  <p className="offer-card__fit-rationale">{offer.affinity.rationale}</p>
-                )}
-                {(offer.affinity.resembles ?? []).length > 0 && (
-                  <div className="offer-card__chips">
-                    {(offer.affinity.resembles ?? []).map((r) => (
-                      <span key={r} className="chip chip--skill">
-                        {r}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </>
-          ) : offer.affinity.state === 'failed' ? (
-            <span className={enrichmentStatusClass('failed')}>Affinity unavailable</span>
-          ) : offer.affinity.state === 'insufficient' ? (
-            // Cold start — a distinct state, NOT "pending" (FR-006): affinity needs ≥ 3 applied offers.
-            <span
-              className="offer-card__affinity-insufficient muted text-sm"
-              data-testid="affinity-insufficient"
-            >
-              Affinity — not enough application history yet
-            </span>
-          ) : (
-            <span className={enrichmentStatusClass('pending')}>Affinity pending</span>
-          )}
-        </div>
-      )}
+      {showAffinity && offer.affinity && <AffinityBreakdown affinity={offer.affinity} compact />}
 
-      {offer.requiredSkills.length > 0 && (
-        <div className="offer-card__skills">
-          {offer.requiredSkills.map((skill) => (
-            <span key={skill} className="chip chip--skill">
-              {skill}
+      {skillRow.length > 0 && (
+        <div className="offer-card__skills" data-testid="offer-skills">
+          {skillRow.map((s) => (
+            <span key={s.label} className={s.missing ? 'chip chip--missing' : 'chip chip--skill'}>
+              {s.missing ? `missing: ${s.label}` : s.label}
             </span>
           ))}
         </div>

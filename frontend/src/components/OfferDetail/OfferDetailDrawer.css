@@ -33,6 +33,26 @@
   font-size: var(--fs-sm);
   margin-top: 2px;
 }
+.offer-detail__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+  margin-top: var(--sp-2);
+}
+.offer-detail__head-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-shrink: 0;
+}
+.offer-detail__nav {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+.offer-detail__nav-count {
+  white-space: nowrap;
+}
 .offer-detail__icon-btn {
   background: none;
   border: none;
@@ -41,8 +61,12 @@
   color: var(--c-ink-500);
   line-height: 1;
 }
-.offer-detail__icon-btn:hover {
+.offer-detail__icon-btn:hover:not(:disabled) {
   color: var(--c-ink-900);
+}
+.offer-detail__icon-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .offer-detail__facts {
@@ -53,10 +77,11 @@
   font-size: var(--fs-sm);
 }
 
+/* Column layout so the full fit + affinity breakdown boxes stack (finding #10). */
 .offer-detail__signals {
   display: flex;
+  flex-direction: column;
   gap: var(--sp-3);
-  font-weight: var(--fw-bold);
 }
 
 .offer-detail__bands {
@@ -108,6 +133,10 @@
 
 .offer-detail__foot {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   justify-content: flex-end;
   gap: var(--sp-2);
+  border-top: 1px solid var(--c-paper-200);
+  padding-top: var(--sp-3);
 }

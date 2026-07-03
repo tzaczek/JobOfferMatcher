@@ -58,7 +58,10 @@ describe('EnrichmentIndicator (T059)', () => {
   })
 
   it('re-runs failed and refreshes the counts', async () => {
-    getEnrichmentStatus.mockResolvedValue(status({ pendingTotal: 0, failedTotal: 2 }))
+    getEnrichmentStatus
+      .mockResolvedValueOnce(status({ pendingTotal: 0, failedTotal: 2 }))
+      // Re-running re-arms the failed items as pending; the live status poll now reflects that count.
+      .mockResolvedValue(status({ pendingTotal: 2, failedTotal: 0 }))
     triggerRerun.mockResolvedValue(status({ pendingTotal: 2, failedTotal: 0 }))
     render(<EnrichmentIndicator />)
 

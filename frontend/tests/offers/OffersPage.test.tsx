@@ -14,6 +14,7 @@ vi.mock('../../src/api/offers.ts', () => ({
 vi.mock('../../src/api/scans.ts', () => ({
   runScan: vi.fn(),
   getScanStatus: vi.fn(),
+  listScans: vi.fn().mockResolvedValue({ data: [] }),
 }))
 vi.mock('../../src/api/sources.ts', () => ({
   listSources: vi.fn().mockResolvedValue({ data: [] }),
@@ -108,6 +109,17 @@ describe('OffersPage states (T023a)', () => {
     })
     renderWithRouter(<OffersPage />)
     expect(await screen.findByTestId('affinity-hint')).toHaveTextContent(/at least 3 offers/i)
+  })
+
+  it('with an insufficient basis, shows the feed hint but no per-card cold-start line (T020/finding #7)', async () => {
+    listOffers.mockResolvedValue({
+      data: [makeOffer({ offerId: 'o1', affinity: { state: 'insufficient' } })],
+      meta: { ...EMPTY.meta, total: 1, appliedCount: 1, hasAffinityBasis: false },
+    })
+    renderWithRouter(<OffersPage />)
+    expect(await screen.findByTestId('affinity-hint')).toBeInTheDocument()
+    // The card must not repeat the cold-start line — the feed-level hint already explains it.
+    expect(screen.queryByTestId('affinity-insufficient')).not.toBeInTheDocument()
   })
 
   it('keeps the feed mounted during a status-change reload instead of collapsing to the loading state', async () => {

@@ -33,7 +33,7 @@ function makeOffer(fit: FitDto | null): OfferDto {
 }
 
 describe('OfferCard fit states (T052)', () => {
-  it('produced: renders score, rationale, matched and missing', () => {
+  it('produced: renders score, one deduped skills row, and a collapsed rationale (finding #7)', () => {
     render(
       <OfferCard
         offer={makeOffer({
@@ -47,7 +47,12 @@ describe('OfferCard fit states (T052)', () => {
     )
     expect(screen.getByText('82')).toBeInTheDocument()
     expect(screen.getByText('/100 fit')).toBeInTheDocument()
+    // The rationale is collapsed behind a "Why this fit" expander but still present in the DOM.
+    expect(screen.getByText('Why this fit')).toBeInTheDocument()
     expect(screen.getByText('Strong backend match')).toBeInTheDocument()
+    // C# is in both requiredSkills and fit.matched — getByText throws on duplicates, so this proves
+    // the deduped skills row renders each skill exactly once (finding #7).
+    expect(screen.getByText('C#')).toBeInTheDocument()
     expect(screen.getByText('EF Core')).toBeInTheDocument()
     expect(screen.getByText('missing: Kafka')).toBeInTheDocument()
   })

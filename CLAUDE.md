@@ -1,12 +1,13 @@
 <!-- SPECKIT START -->
-**Active feature**: `006-application-affinity-metric` — Application Affinity Metric & Offer Detail Body.
+**Active feature**: `007-triage-loop-ux` — Triage-Loop UX (Offers feed & offer detail).
 For technologies, project structure, shell commands, and other context, read the current plan:
-`specs/006-application-affinity-metric/plan.md` (with `research.md`, `data-model.md`, `contracts/`,
-`quickstart.md` alongside it). Prior features: `001-job-offer-matcher` (collection/feed/scheduler),
+`specs/007-triage-loop-ux/plan.md` (with `research.md`, `data-model.md`, `contracts/`, `quickstart.md`,
+`tasks.md` alongside it). Prior features: `001-job-offer-matcher` (collection/feed/scheduler),
 `002-llm-enrichment-matching` (LLM enrichment via a local Claude-Code worker), `003-backup-restore`
-(on-demand backup/restore), `004-tailored-cv-generation` (per-offer tailored CV), and
-`005-application-tracking` (application & interview process tracking) — all delivered and preserved
-unchanged; plans at `specs/00{1,2,3,4,5}-*/plan.md`.
+(on-demand backup/restore), `004-tailored-cv-generation` (per-offer tailored CV),
+`005-application-tracking` (application & interview process tracking), and `006-application-affinity-metric`
+(affinity metric & in-app offer body) — all delivered and preserved unchanged; plans at
+`specs/00{1,2,3,4,5,6}-*/plan.md`.
 
 **Locked stack** (constitution v1.1.0): local-first, single-user **web app** — React (Vite,
 TypeScript) front end + **.NET 10** (ASP.NET Core) back end + **PostgreSQL** (EF Core,
@@ -98,4 +99,17 @@ add `"offer_affinity"` to `BackupTables.InsertOrder` (guarded by the completenes
 captured body + current affinity score. Reuses `EnrichmentService`/`IEnrichmentRepository`, the `inputs_hash`
 guard, `/rerun`, `MaintenanceGate`, `LoopbackOnlyFilter`. See `specs/006-application-affinity-metric/plan.md`
 ADR-1..ADR-5. Principles III/IV/IX upheld; **no existing data dropped or edited**.
+
+**Load-bearing decisions (007)**: **frontend-only** triage-loop UX — the ten verified UX-audit findings
+(#1–#10 in `docs/ux-review-findings.md`) for the Offers feed + offer detail view. **No backend change, no EF
+migration, no new dependency**: reuses existing endpoints/DTOs (`listOffers` `q`/`workMode`, enrichment
+status, `listScans`, `setOfferStatus`, apply, tailored) and the `lib/polling.ts` `poll()` helper. Built on
+**four shared refactors** — URL-backed toolbar state (`useSearchParams`, replace-mode); an optimistic
+feed-status update reconciled with background refetches (no reshuffle under an open drawer / in-flight undo); a
+widened `OfferDetailDrawer` (footer actions + prev/next + full fit/affinity breakdown on one shared keydown
+effect); and extracted `FitBreakdown`/`AffinityBreakdown` (`components/OfferSignals/`) reused by card + drawer.
+**Open = viewed** (finding #4, clarified 2026-07-03): opening a detail view auto-marks `new→viewed` (already
+legal, zero backend) plus a "Mark all reviewed" action. Design tokens only (VIII); each story visually
+verified (VII). Lean speckit (research/data-model/contracts intentionally minimal per X). See
+`specs/007-triage-loop-ux/plan.md`; task sequence in `tasks.md`.
 <!-- SPECKIT END -->
