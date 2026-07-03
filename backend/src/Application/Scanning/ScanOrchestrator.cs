@@ -77,38 +77,86 @@ public sealed class ScanOrchestrator(
         IncompleteReason? reason = null;
         var touched = new HashSet<OfferId>();
 
-        foreach (var source in targets)
+        try
         {
-            var context = new SourceScanContext();
-            var (outcome, sourceReason) = await CollectSourceAsync(source, run.Id, tally, context, touched, ct);
-
-            if (outcome == ScanOutcome.Complete)
+            foreach (var source in targets)
             {
-                (outcome, sourceReason) = await ReconcileAsync(source, tally, context, ct);
+                var context = new SourceScanContext();
+                var (outcome, sourceReason) = await CollectSourceAsync(source, run.Id, tally, context, touched, ct);
+
+                if (outcome == ScanOutcome.Complete)
+                {
+                    (outcome, sourceReason) = await ReconcileAsync(source, tally, context, ct);
+                }
+
+                if (outcome > worstOutcome)
+                {
+                    worstOutcome = outcome;
+                    reason = sourceReason;
+                }
             }
 
-            if (outcome > worstOutcome)
-            {
-                worstOutcome = outcome;
-                reason = sourceReason;
-            }
+            // Cross-source grouping (FR-016) — best-effort, never fails the scan.
+            await roleGrouping.AttachAsync(touched, ct);
+
+            run.Finish(
+                time.GetUtcNow(),
+                new ScanCounts(tally.Collected, tally.New, tally.Updated, tally.Unavailable, tally.Failed),
+                worstOutcome,
+                reason);
+            await unitOfWork.SaveChangesAsync(ct);
         }
-
-        // Cross-source grouping (FR-016) — best-effort, never fails the scan.
-        await roleGrouping.AttachAsync(touched, ct);
-
-        run.Finish(
-            time.GetUtcNow(),
-            new ScanCounts(tally.Collected, tally.New, tally.Updated, tally.Unavailable, tally.Failed),
-            worstOutcome,
-            reason);
-        await unitOfWork.SaveChangesAsync(ct);
+        catch (Exception ex)
+        {
+            // The caller disconnected (e.g. a client-side request timeout aborts HttpContext.RequestAborted,
+            // which is this same ct), the process is shutting down, or something unexpected broke mid-scan.
+            // Persist a terminal record with whatever tally was collected so far — an un-finished ScanRun
+            // (finished_at stays null forever) would otherwise orphan the row and make the feed's "resume
+            // in-flight scan" logic (007) poll it indefinitely. Always use a fresh token: ct itself may
+            // already be the one that just cancelled.
+            await FinishInterruptedAsync(run, tally, ex);
+            throw;
+        }
 
         logger.LogInformation(
             "Scan {ScanRunId} finished: {Outcome}, collected={Collected} new={New} updated={Updated} unavailable={Unavailable}.",
             run.Id, worstOutcome, tally.Collected, tally.New, tally.Updated, tally.Unavailable);
 
         return run.Id;
+    }
+
+    /// <summary>
+    /// Best-effort terminal write for a scan interrupted by cancellation or an unhandled exception (an
+    /// orphaned ScanRun with finished_at null forever would make the feed's resume-in-flight logic (007)
+    /// poll it indefinitely). Always uses a fresh CancellationToken — the original may already be the one
+    /// that cancelled — and never throws itself, so it can't mask the original exception.
+    /// </summary>
+    private async Task FinishInterruptedAsync(ScanRun run, Tally tally, Exception cause)
+    {
+        try
+        {
+            run.Finish(
+                time.GetUtcNow(),
+                new ScanCounts(tally.Collected, tally.New, tally.Updated, tally.Unavailable, tally.Failed),
+                ScanOutcome.Failed,
+                IncompleteReason.NetworkFailure);
+            await unitOfWork.SaveChangesAsync(CancellationToken.None);
+
+            if (cause is OperationCanceledException)
+            {
+                logger.LogWarning(
+                    "Scan {ScanRunId} was cancelled (caller disconnected or shutdown); marked Failed with partial counts.",
+                    run.Id);
+            }
+            else
+            {
+                logger.LogError(cause, "Scan {ScanRunId} was interrupted by an unhandled exception; marked Failed with partial counts.", run.Id);
+            }
+        }
+        catch (Exception persistEx)
+        {
+            logger.LogError(persistEx, "Failed to persist terminal state for interrupted scan {ScanRunId}.", run.Id);
+        }
     }
 
     private async Task<(ScanOutcome Outcome, IncompleteReason? Reason)> CollectSourceAsync(
