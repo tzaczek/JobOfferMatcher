@@ -7,6 +7,7 @@ import type {
   ApplicationBoardDto,
   ApplicationDetailDto,
   PipelineStageDto,
+  TailoredCvDto,
 } from '../../src/api/types.ts'
 import { renderWithRouter } from '../testUtils.tsx'
 
@@ -32,6 +33,8 @@ const createStage = vi.fn()
 const renameStage = vi.fn()
 const reorderStages = vi.fn()
 const deleteStage = vi.fn()
+const getTailored = vi.fn()
+const downloadTailoredPdf = vi.fn()
 
 vi.mock('../../src/api/applications.ts', () => ({
   getBoard: (...a: unknown[]) => getBoard(...a),
@@ -56,6 +59,13 @@ vi.mock('../../src/api/applications.ts', () => ({
   renameStage: (...a: unknown[]) => renameStage(...a),
   reorderStages: (...a: unknown[]) => reorderStages(...a),
   deleteStage: (...a: unknown[]) => deleteStage(...a),
+}))
+
+vi.mock('../../src/api/tailoredCv.ts', () => ({
+  getTailored: (...a: unknown[]) => getTailored(...a),
+  downloadTailoredPdf: (...a: unknown[]) => downloadTailoredPdf(...a),
+  previewUrl: (offerId: string, version?: number) =>
+    `/api/tailored-cv/offer/${offerId}/preview${version !== undefined ? `?v=${version}` : ''}`,
 }))
 
 import { ApplicationsPage } from '../../src/pages/Applications/ApplicationsPage.tsx'
@@ -131,8 +141,27 @@ function detail(overrides: Partial<ApplicationDetailDto> = {}): ApplicationDetai
   }
 }
 
+function tailoredCv(overrides: Partial<TailoredCvDto> = {}): TailoredCvDto {
+  return {
+    offerId: 'o1',
+    offerTitle: 'Senior .NET Engineer',
+    company: 'Acme',
+    sourceCvId: 'cv1',
+    state: 'produced',
+    generationVersion: 2,
+    emphasisedSkills: ['C#', '.NET'],
+    prompt: 'Tailor it',
+    hasPdf: true,
+    generatedAt: '2026-06-22T00:00:00Z',
+    lastError: null,
+    ...overrides,
+  }
+}
+
 beforeEach(() => {
   vi.clearAllMocks()
+  // Default: the offer has no tailored CV — the 404 the drawer swallows on mount.
+  getTailored.mockRejectedValue(new ApiError('TailoredCvNotFound', 'No tailored CV.', 404))
 })
 
 describe('ApplicationsPage board', () => {
@@ -258,6 +287,66 @@ function OffersRouteStub() {
   const [params] = useSearchParams()
   return <div data-testid="offers-route">{params.get('offerId')}</div>
 }
+
+describe('ApplicationDrawer tailored-CV link (Documents)', () => {
+  it('surfaces a produced tailored CV as a View link + Download in the Documents tab', async () => {
+    const user = userEvent.setup()
+    getApplication.mockResolvedValue(detail({ documents: [] }))
+    getTailored.mockResolvedValue(tailoredCv())
+    downloadTailoredPdf.mockResolvedValue({ fileName: 'CV - Acme - Senior .NET Engineer.pdf' })
+
+    renderWithRouter(
+      <ApplicationDrawer offerId="o1" stages={STAGES} onClose={() => {}} onChanged={() => {}} />,
+    )
+
+    await user.click(await screen.findByRole('tab', { name: /Documents/ }))
+
+    const row = await screen.findByTestId('tailored-cv-doc')
+    expect(within(row).getByText('Tailored CV')).toBeInTheDocument()
+
+    // "View" is an anchor to the preview HTML, cache-busted by the generation version, opening a new tab.
+    const view = within(row).getByRole('link', { name: 'View' })
+    expect(view).toHaveAttribute('href', '/api/tailored-cv/offer/o1/preview?v=2')
+    expect(view).toHaveAttribute('target', '_blank')
+
+    // It's a derived link, not an uploaded file — no delete affordance.
+    expect(within(row).queryByLabelText('Delete document')).not.toBeInTheDocument()
+
+    // "Download" triggers the blob-download helper for this offer.
+    await user.click(within(row).getByRole('button', { name: 'Download' }))
+    expect(downloadTailoredPdf).toHaveBeenCalledWith('o1')
+  })
+
+  it('shows no tailored-CV row when the offer has none', async () => {
+    const user = userEvent.setup()
+    getApplication.mockResolvedValue(detail({ documents: [] }))
+    getTailored.mockRejectedValue(new ApiError('TailoredCvNotFound', 'No tailored CV.', 404))
+
+    renderWithRouter(
+      <ApplicationDrawer offerId="o1" stages={STAGES} onClose={() => {}} onChanged={() => {}} />,
+    )
+
+    await user.click(await screen.findByRole('tab', { name: /Documents/ }))
+    expect(await screen.findByText('No documents attached.')).toBeInTheDocument()
+    expect(screen.queryByTestId('tailored-cv-doc')).not.toBeInTheDocument()
+  })
+
+  it('does not surface a link while the tailored CV is still pending', async () => {
+    const user = userEvent.setup()
+    getApplication.mockResolvedValue(detail({ documents: [] }))
+    getTailored.mockResolvedValue(
+      tailoredCv({ state: 'pending', hasPdf: false, generatedAt: null }),
+    )
+
+    renderWithRouter(
+      <ApplicationDrawer offerId="o1" stages={STAGES} onClose={() => {}} onChanged={() => {}} />,
+    )
+
+    await user.click(await screen.findByRole('tab', { name: /Documents/ }))
+    expect(await screen.findByText('No documents attached.')).toBeInTheDocument()
+    expect(screen.queryByTestId('tailored-cv-doc')).not.toBeInTheDocument()
+  })
+})
 
 describe('PipelineStagesSection', () => {
   it('adds a stage', async () => {

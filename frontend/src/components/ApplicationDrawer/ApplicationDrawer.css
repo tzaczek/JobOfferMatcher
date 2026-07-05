@@ -325,6 +325,10 @@
   word-break: break-word;
 }
 
+.app-drawer__doc-error {
+  color: var(--c-danger);
+}
+
 .app-drawer__doc-actions {
   display: flex;
   align-items: center;

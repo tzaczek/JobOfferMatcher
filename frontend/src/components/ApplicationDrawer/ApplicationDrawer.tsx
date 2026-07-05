@@ -6,6 +6,7 @@ import type {
   ApplicationOutcome,
   CommunicationDirection,
   PipelineStageDto,
+  TailoredCvDto,
 } from '../../api/types.ts'
 import {
   addCommunication,
@@ -25,6 +26,7 @@ import {
   updateTask,
   uploadDocument,
 } from '../../api/applications.ts'
+import { downloadTailoredPdf, getTailored, previewUrl } from '../../api/tailoredCv.ts'
 import { ApiError } from '../../api/client.ts'
 import './ApplicationDrawer.css'
 
@@ -61,6 +63,7 @@ interface Props {
 
 export function ApplicationDrawer({ offerId, stages, onClose, onChanged }: Props) {
   const [detail, setDetail] = useState<ApplicationDetailDto | null>(null)
+  const [tailored, setTailored] = useState<TailoredCvDto | null>(null)
   const [tab, setTab] = useState<Tab>('timeline')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -85,6 +88,21 @@ export function ApplicationDrawer({ offerId, stages, onClose, onChanged }: Props
         (e) =>
           active && setError(e instanceof ApiError ? e.message : 'Failed to load the application.'),
       )
+    return () => {
+      active = false
+    }
+  }, [offerId])
+
+  // Surface the offer's tailored CV (if any) as a link in the Documents section. A 404
+  // (TailoredCvNotFound) just means none was generated for this offer — leave it hidden.
+  useEffect(() => {
+    let active = true
+    setTailored(null)
+    getTailored(offerId)
+      .then((t) => active && setTailored(t))
+      .catch(() => {
+        /* no tailored CV for this offer (404) — nothing to surface */
+      })
     return () => {
       active = false
     }
@@ -126,7 +144,7 @@ export function ApplicationDrawer({ offerId, stages, onClose, onChanged }: Props
         timeline: detail.timeline.length,
         notes: detail.notes.length,
         tasks: detail.tasks.length,
-        documents: detail.documents.length,
+        documents: detail.documents.length + (tailored?.state === 'produced' ? 1 : 0),
         interviews: detail.interviews.length,
         contact: detail.communications.length,
       }
@@ -273,6 +291,8 @@ export function ApplicationDrawer({ offerId, stages, onClose, onChanged }: Props
               {tab === 'documents' && (
                 <DocumentsPanel
                   detail={detail}
+                  offerId={offerId}
+                  tailored={tailored}
                   busy={busy}
                   onUpload={(file) => run(() => uploadDocument(offerId, file))}
                   onDelete={(id) => run(() => deleteDocument(offerId, id))}
@@ -554,17 +574,38 @@ function TasksPanel({
 
 function DocumentsPanel({
   detail,
+  offerId,
+  tailored,
   busy,
   onUpload,
   onDelete,
   onDownload,
 }: {
   detail: ApplicationDetailDto
+  offerId: string
+  tailored: TailoredCvDto | null
   busy: boolean
   onUpload: (file: File) => void
   onDelete: (id: string) => void
   onDownload: (id: string, name: string) => Promise<unknown>
 }) {
+  const [tcvBusy, setTcvBusy] = useState(false)
+  const [tcvError, setTcvError] = useState<string | null>(null)
+  // Only surface a link once the worker has produced the CV — a pending/failed one has nothing to open.
+  const hasTailored = tailored?.state === 'produced'
+
+  async function handleTailoredDownload() {
+    setTcvBusy(true)
+    setTcvError(null)
+    try {
+      await downloadTailoredPdf(offerId)
+    } catch (e) {
+      setTcvError(e instanceof ApiError ? e.message : 'Could not download the tailored CV.')
+    } finally {
+      setTcvBusy(false)
+    }
+  }
+
   return (
     <div className="app-drawer__section">
       <div className="app-drawer__form-actions app-drawer__form-actions--start">
@@ -583,10 +624,48 @@ function DocumentsPanel({
           />
         </label>
       </div>
-      {detail.documents.length === 0 ? (
+      {detail.documents.length === 0 && !hasTailored ? (
         <EmptyState>No documents attached.</EmptyState>
       ) : (
         <ul className="app-drawer__list" data-testid="documents-list">
+          {hasTailored && tailored && (
+            <li className="app-drawer__item app-drawer__doc" data-testid="tailored-cv-doc">
+              <div className="app-drawer__doc-info">
+                <span className="app-drawer__doc-name">Tailored CV</span>
+                <span className="muted text-sm">
+                  Tailored for this role
+                  {tailored.generatedAt
+                    ? ` · ${new Date(tailored.generatedAt).toLocaleDateString()}`
+                    : ''}
+                </span>
+                {tcvError && (
+                  <span className="app-drawer__doc-error text-sm" role="alert">
+                    {tcvError}
+                  </span>
+                )}
+              </div>
+              <span className="app-drawer__doc-actions">
+                <a
+                  className="btn btn--ghost btn--sm"
+                  href={previewUrl(tailored.offerId, tailored.generationVersion)}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                >
+                  View
+                </a>
+                {tailored.hasPdf && (
+                  <button
+                    type="button"
+                    className="btn btn--ghost btn--sm"
+                    disabled={busy || tcvBusy}
+                    onClick={() => void handleTailoredDownload()}
+                  >
+                    {tcvBusy ? 'Downloading…' : 'Download'}
+                  </button>
+                )}
+              </span>
+            </li>
+          )}
           {detail.documents.map((d) => (
             <li key={d.id} className="app-drawer__item app-drawer__doc">
               <div className="app-drawer__doc-info">
