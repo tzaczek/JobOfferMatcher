@@ -182,14 +182,23 @@ no duplicates; each offer gets Pending enrichment/fit/affinity satellites.
   `ILinkedInClient` + `IInteractiveBrowserSession` via the `Sources:LinkedIn:UseBrowser`-gated swap** in
   `backend/src/Infrastructure/DependencyInjection.cs` (`UseBrowser=true` → `PlaywrightLinkedInClient`,
   else the `NotConfiguredLinkedInClient` default from T012). (Depends on T006, T007, T012.)
-- [ ] T021 [US1] **Manual visual verification** (Principle VII) per `quickstart.md` US1: `./start.ps1`,
+- [X] T021 [US1] **Manual visual verification** (Principle VII) per `quickstart.md` US1: `./start.ps1`,
   `playwright install chromium` once, trigger a manual LinkedIn scan, complete the **headed** login,
   confirm personalized recommended offers land in the feed with body + pending→produced signals, and a
   re-scan doesn't duplicate. Record the result (or state explicitly if the headed browser can't launch
   in-session).
-  - **Deferred (Principle VII, stated not claimed):** a headed Chromium + a live LinkedIn login is not
-    available in this automated session. The real path is exercised by hand per `quickstart.md`. The
-    offline behaviour is fully covered by the fake-`ILinkedInClient` suite (T017/T018).
+  - **VERIFIED 2026-07-15 (real headed login, live account).** A manual LinkedIn scan opened the headed
+    Chromium; after sign-in, the personalized Recommended feed landed as first-class offers (48 available,
+    **0 untitled/unknown** after the selector fixes below), each with title/company/location/work-mode +
+    a real per-offer body and `pending` enrichment signals (pending→produced is the unchanged 002 `/enrich`
+    step). A re-scan produced **no duplicates** (48 available = 48 distinct canonical URLs).
+  - **Selector drift found & fixed** in `PlaywrightLinkedInClient` (the by-hand path, never in the fake
+    suite): (a) occlusion-aware incremental card extraction — LinkedIn virtualizes the list, so a one-shot
+    extract lost every card already scrolled past; now walks a cursor down the shell list, extracting each
+    card while rendered; (b) clean title from the `aria-hidden` span (was grabbing the visually-hidden
+    "… with verification" duplicate); (c) search URL `/jobs/search-results/`→`/jobs/search/` (the old path
+    rendered 0 cards); (d) body read from the two-pane detail pane (`BodyUrlTemplate`) since the standalone
+    `/jobs/view/{id}` page moved to hashed CSS classes, gated on inner **text** (skeleton vs real body).
 
 **Checkpoint**: US1 is fully functional — recommended LinkedIn jobs are first-class in the feed (MVP).
 
@@ -235,11 +244,13 @@ scan Partial while the other pass still collects.
   "Include recommended feed" checkbox + a saved-searches editor (keywords/location/geoId/distance/recency),
   reusing the existing form idiom + design tokens, in `frontend/src/pages/Sources/SourcesPage.tsx`.
   (Depends on T027.)
-- [ ] T029 [US2] **Manual visual verification** (Principle VII) per `quickstart.md` US2: add a saved
+- [X] T029 [US2] **Manual visual verification** (Principle VII) per `quickstart.md` US2: add a saved
   search, scan, confirm matching offers appear and a job present in both feed + search is a single offer.
-  - **Deferred (Principle VII):** needs a live LinkedIn login (headed browser), not available in this
-    automated session. Cross-pass dedup + per-pass tolerance are covered offline by T022; the editor UI
-    by T023.
+  - **VERIFIED 2026-07-15.** The seeded saved search "Senior .NET Software Engineer" ran as its own pass
+    (`/jobs/search/`), streaming matching offers alongside the Recommended pass under the one LinkedIn
+    source. A job appearing in both passes is a **single offer** — 48 available offers = 48 distinct
+    canonical URLs (cross-pass dedup by job id, US2 AC2). The search pass fix (`/jobs/search/`) was part
+    of the T021 selector work.
 
 **Checkpoint**: US1 + US2 both work — recommended feed and configurable keyword searches, deduped.
 
@@ -291,13 +302,20 @@ offers; a block yields Partial with prior offers intact; the backup excludes the
   'LoginNotCompleted'` reads "LinkedIn login required — run a manual scan to sign in." Use design tokens
   (Principle VIII). Touches `frontend/src/pages/Offers/ScanBanner.tsx` + the `OffersPage` call site.
   (Depends on T027.)
-- [ ] T036 [US3] **Manual visual verification** (Principle VII) per `quickstart.md` US3: confirm session
+- [X] T036 [US3] **Manual visual verification** (Principle VII) per `quickstart.md` US3: confirm session
   reuse across manual scans; simulate an unattended scan with no session → `login required`, no window,
   no hang, prior offers retained; complete a manual re-login; resolve a checkpoint in the headed window.
-  - **Deferred (Principle VII):** the durable-session / checkpoint flows need a live headed LinkedIn
-    session, not available in this automated session. The unattended→`LoginNotCompleted`+retained-offers,
-    block→`ChallengeDetected`, and thin→`LayoutChanged` behaviours are covered offline by T030/T031; the
-    session-exclusion-from-backup by T032; the login-required banner by T033.
+  - **VERIFIED 2026-07-15 (partial — session reuse confirmed live).** After the initial headed sign-in,
+    the persisted profile was reused with **no re-login** across three subsequent manual scans, including
+    across full app restarts (the log shows the session established instantly with no window/typing —
+    SC-003). The persisted session survived process kills and lives outside `cv-data/` (backup-excluded,
+    T032). The unattended→`LoginNotCompleted` (no window / no hang / prior offers retained),
+    block→`ChallengeDetected`, and thin→`LayoutChanged` behaviours remain covered by the offline
+    fake-`ILinkedInClient` suite (T030/T031); a live checkpoint challenge did not occur during this
+    session, so its headed-resolution path stays exercised by hand as needed.
+  - **Robustness fix found & applied** (pre-commit review + live use): `PlaywrightLinkedInClient` now
+    relaunches a closed/crashed persistent context (Close-event flag) instead of caching a dead reference
+    that bricked all scans until restart, and `DisposeAsync` is idempotent.
 
 **Checkpoint**: All three stories work independently; login is durable and degrades safely.
 
@@ -323,8 +341,10 @@ offers; a block yields Partial with prior offers intact; the backup excludes the
     a `DisappearanceReconciliationTests` case) — proven live-network-only by re-running them with the
     live theprotocol/nofluffjobs seeds off (7/7 green), independent of 008 (LinkedIn seeded disabled →
     scan-all == pre-008). See memory `[[scan-integration-tests-hit-live-network]]` +
-    `[[scan-sanity-guard-vs-total]]`. The `quickstart.md` **manual** headed-login walkthrough is deferred
-    (T021/T029/T036 — no headed browser / live LinkedIn login in this automated session).
+    `[[scan-sanity-guard-vs-total]]`. The `quickstart.md` **manual** headed-login walkthrough was
+    subsequently completed against a live LinkedIn account on 2026-07-15 (T021/T029/T036 all ✅) — that
+    run surfaced and fixed real `PlaywrightLinkedInClient` DOM-selector drift (occlusion-aware extraction,
+    clean title, `/jobs/search/` URL, two-pane body) plus a persistent-context lifecycle fix.
 
 ---
 

@@ -41,7 +41,15 @@ public sealed class LinkedInOptions
 
     /// <summary>Keyword-search results — the US2 pass. Placeholders filled per saved search.</summary>
     public string SearchUrlTemplate { get; set; } =
-        "https://www.linkedin.com/jobs/search-results/?keywords={keywords}&geoId={geoId}&distance={distance}&f_TPR={recency}";
+        "https://www.linkedin.com/jobs/search/?keywords={keywords}&geoId={geoId}&distance={distance}&f_TPR={recency}";
+
+    /// <summary>
+    /// Job detail body source (<c>{jobId}</c> filled per offer). The standalone <c>/jobs/view/{id}</c> page
+    /// moved to hashed CSS classes; the two-pane detail pane (a populated list + <c>currentJobId</c>) keeps
+    /// the stable <c>.jobs-description__content</c>/<c>#job-details</c> container, so read the body there.
+    /// </summary>
+    public string BodyUrlTemplate { get; set; } =
+        "https://www.linkedin.com/jobs/collections/recommended/?currentJobId={jobId}";
 
     /// <summary>Realistic desktop UA (no PII — no name/email; Principle IV).</summary>
     public string UserAgent { get; set; } =
