@@ -18,7 +18,13 @@ internal static class SourceEndpoints
         bool WithSalary,
         string? SortBy,
         string? OrderBy,
-        string[]? WorkplaceKeep);
+        string[]? WorkplaceKeep,
+        // LinkedIn source (feature 008) — additive; null on non-LinkedIn sources.
+        bool? IncludeRecommended = null,
+        LinkedInSearchDto[]? LinkedInSearches = null);
+
+    /// <summary>One LinkedIn saved keyword search (feature 008, US2).</summary>
+    public sealed record LinkedInSearchDto(string Keywords, string? Location, string? GeoId, int? Distance, string? Recency);
 
     public sealed record CreateSourceRequest(string Name, string Kind, SearchCriteriaDto SearchCriteria, bool RequiresLogin);
 
@@ -96,6 +102,13 @@ internal static class SourceEndpoints
         SortBy = dto.SortBy,
         OrderBy = dto.OrderBy,
         WorkplaceKeep = dto.WorkplaceKeep ?? [],
+        // LinkedIn (feature 008): coalesce null → defaults; drop searches with blank keywords (invariant).
+        IncludeRecommended = dto.IncludeRecommended ?? false,
+        LinkedInSearches = (dto.LinkedInSearches ?? [])
+            .Select(s => LinkedInSearch.Create(s.Keywords, s.Location, s.GeoId, s.Distance, s.Recency))
+            .Where(r => r.IsSuccess)
+            .Select(r => r.Value)
+            .ToList(),
     };
 
     private static object ToDto(JobSource s) => new
@@ -115,6 +128,16 @@ internal static class SourceEndpoints
             sortBy = s.Search.SortBy,
             orderBy = s.Search.OrderBy,
             workplaceKeep = s.Search.WorkplaceKeep,
+            // LinkedIn (feature 008): always emitted so the editor can round-trip them.
+            includeRecommended = s.Search.IncludeRecommended,
+            linkedInSearches = s.Search.LinkedInSearches.Select(ls => new
+            {
+                keywords = ls.Keywords,
+                location = ls.Location,
+                geoId = ls.GeoId,
+                distance = ls.Distance,
+                recency = ls.Recency,
+            }),
         },
     };
 }

@@ -24,6 +24,11 @@ public static class DatabaseSeeder
     public static readonly SourceId DefaultNoFluffJobsSourceId =
         SourceId.From(new Guid("33333333-3333-3333-3333-333333333333"));
 
+    // LinkedIn (feature 008): the first InteractiveBrowser source. Routed by kind (not id) in the factory,
+    // so this id only anchors the idempotent seed.
+    public static readonly SourceId DefaultLinkedInSourceId =
+        SourceId.From(new Guid("44444444-4444-4444-4444-444444444444"));
+
     /// <summary>
     /// Default interview pipeline stages, seeded (in order) only when the table is empty (data-model §8,
     /// FR-019). A reasonable single-user default derived from Constitution Principle III; fully editable.
@@ -67,6 +72,24 @@ public static class DatabaseSeeder
             OrderBy = "DESC",
             WorkplaceKeep = [],
         }, ct);
+
+        // LinkedIn (feature 008): the personalized Recommended feed on + one starter keyword search. Kind
+        // InteractiveBrowser (routes to LinkedInSource) and requiresLogin (the user signs in on a manual
+        // scan). Additive jsonb search fields — no migration (ADR-5). Editable later via the source editor.
+        //
+        // Seeded DISABLED (deviation from data-model §2's enabled:true, per the discovered constraint
+        // below): a login-gated source cannot collect until the user signs in, so if it were enabled it
+        // would FAIL every unattended (scheduled) scan with LoginNotCompleted, dragging the whole run's
+        // outcome to Failed. Because disappearance reconciliation's baseline lookup
+        // (GetLastCompleteForSourceAsync) is gated on the RUN-level Complete outcome, that would leave
+        // EVERY other source without a "last complete run" — permanently disabling the <50% sanity guard
+        // and risking a mass-unavailable of live offers (FR-015). The user enables LinkedIn from the
+        // Sources page when ready to log in; scanning it explicitly by id still works while disabled.
+        await SeedSourceAsync(db, logger, DefaultLinkedInSourceId, "LinkedIn", new JobSourceSearch
+        {
+            IncludeRecommended = true,
+            LinkedInSearches = [new LinkedInSearch { Keywords = "Senior .NET Software Engineer" }],
+        }, ct, SourceKind.InteractiveBrowser, requiresLogin: true, enabled: false);
     }
 
     /// <summary>
@@ -100,14 +123,15 @@ public static class DatabaseSeeder
     }
 
     private static async Task SeedSourceAsync(
-        AppDbContext db, ILogger logger, SourceId id, string name, JobSourceSearch search, CancellationToken ct)
+        AppDbContext db, ILogger logger, SourceId id, string name, JobSourceSearch search, CancellationToken ct,
+        SourceKind kind = SourceKind.DirectApi, bool requiresLogin = false, bool enabled = true)
     {
         if (await db.JobSources.AnyAsync(s => s.Id == id, ct))
         {
             return;
         }
 
-        var created = JobSource.Create(id, name, SourceKind.DirectApi, search, requiresLogin: false, enabled: true);
+        var created = JobSource.Create(id, name, kind, search, requiresLogin, enabled);
         if (created.IsFailure)
         {
             // Should never happen for a hard-coded default; log rather than crash startup.

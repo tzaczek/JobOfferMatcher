@@ -1,5 +1,7 @@
 using System.Net;
+using JobOfferMatcher.Application.Scanning;
 using JobOfferMatcher.Infrastructure.Sources.JustJoinIt;
+using JobOfferMatcher.Infrastructure.Sources.LinkedIn;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -16,12 +18,19 @@ namespace JobOfferMatcher.Infrastructure.Tests;
 /// simulates a loopback connection so the fail-closed <c>/api/enrichment/*</c> guard admits the test
 /// client (TestServer leaves RemoteIpAddress null); pass <c>simulateLoopback: false</c> to assert the
 /// guard's 403 behavior.
+/// <para>
+/// The seeded LinkedIn source (feature 008) is <c>InteractiveBrowser</c> + enabled, so it is part of a
+/// "scan all" run. We force <c>Sources:LinkedIn:UseBrowser=false</c> so the headed Playwright client is
+/// never constructed in tests; pass a <paramref name="fakeLinkedInClient"/> to exercise LinkedIn
+/// collection deterministically (offline — never the real Playwright path).
+/// </para>
 /// </summary>
 public sealed class JobApiFactory(
     string connectionString,
     IJustJoinItClient fakeClient,
     bool simulateLoopback = true,
-    IReadOnlyDictionary<string, string?>? settings = null)
+    IReadOnlyDictionary<string, string?>? settings = null,
+    ILinkedInClient? fakeLinkedInClient = null)
     : WebApplicationFactory<Program>
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -30,6 +39,8 @@ public sealed class JobApiFactory(
         builder.UseSetting("ConnectionStrings:AppDb", connectionString);
         // Tests trigger scans explicitly — keep the background scheduler off.
         builder.UseSetting("Scheduler:Enabled", "false");
+        // Never launch a headed browser in tests — the LinkedIn client stays offline (NotConfigured or fake).
+        builder.UseSetting($"{LinkedInOptions.SectionName}:UseBrowser", "false");
 
         // Extra config (e.g. Cv:StoragePath / Backup:StoragePath) so a test can isolate on-disk dirs.
         if (settings is not null)
@@ -44,6 +55,14 @@ public sealed class JobApiFactory(
         {
             services.RemoveAll<IJustJoinItClient>();
             services.AddSingleton(fakeClient);
+
+            if (fakeLinkedInClient is not null)
+            {
+                services.RemoveAll<ILinkedInClient>();
+                services.RemoveAll<IInteractiveBrowserSession>();
+                services.AddSingleton(fakeLinkedInClient);
+                services.AddSingleton<IInteractiveBrowserSession>(fakeLinkedInClient);
+            }
 
             if (simulateLoopback)
             {

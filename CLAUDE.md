@@ -1,13 +1,16 @@
 <!-- SPECKIT START -->
-**Active feature**: `007-triage-loop-ux` — Triage-Loop UX (Offers feed & offer detail).
+**Active feature**: `008-linkedin-recommended-source` — LinkedIn Recommended Jobs Source (collect the
+user's personalized LinkedIn "Recommended" feed + saved keyword searches via an interactive, persisted,
+manual login).
 For technologies, project structure, shell commands, and other context, read the current plan:
-`specs/007-triage-loop-ux/plan.md` (with `research.md`, `data-model.md`, `contracts/`, `quickstart.md`,
-`tasks.md` alongside it). Prior features: `001-job-offer-matcher` (collection/feed/scheduler),
-`002-llm-enrichment-matching` (LLM enrichment via a local Claude-Code worker), `003-backup-restore`
-(on-demand backup/restore), `004-tailored-cv-generation` (per-offer tailored CV),
-`005-application-tracking` (application & interview process tracking), and `006-application-affinity-metric`
-(affinity metric & in-app offer body) — all delivered and preserved unchanged; plans at
-`specs/00{1,2,3,4,5,6}-*/plan.md`.
+`specs/008-linkedin-recommended-source/plan.md` (with `research.md`, `data-model.md`, `contracts/`,
+`quickstart.md` alongside it; `tasks.md` after `/speckit-tasks`). Prior features:
+`001-job-offer-matcher` (collection/feed/scheduler), `002-llm-enrichment-matching` (LLM enrichment via
+a local Claude-Code worker), `003-backup-restore` (on-demand backup/restore), `004-tailored-cv-generation`
+(per-offer tailored CV), `005-application-tracking` (application & interview process tracking),
+`006-application-affinity-metric` (affinity metric & in-app offer body), and `007-triage-loop-ux`
+(triage-loop UX for the Offers feed & offer detail) — all delivered and preserved unchanged; plans at
+`specs/00{1,2,3,4,5,6,7}-*/plan.md`.
 
 **Locked stack** (constitution v1.1.0): local-first, single-user **web app** — React (Vite,
 TypeScript) front end + **.NET 10** (ASP.NET Core) back end + **PostgreSQL** (EF Core,

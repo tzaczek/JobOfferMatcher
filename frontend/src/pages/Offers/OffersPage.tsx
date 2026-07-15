@@ -90,8 +90,12 @@ export function OffersPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const [view, setView] = useState<FeedView>(() => readEnumParam(searchParams, 'view', FEED_VIEWS, 'all'))
-  const [sort, setSort] = useState<SortKey>(() => readEnumParam(searchParams, 'sort', SORT_KEYS, 'rank'))
+  const [view, setView] = useState<FeedView>(() =>
+    readEnumParam(searchParams, 'view', FEED_VIEWS, 'all'),
+  )
+  const [sort, setSort] = useState<SortKey>(() =>
+    readEnumParam(searchParams, 'sort', SORT_KEYS, 'rank'),
+  )
   const [source, setSource] = useState(() => searchParams.get('source') ?? '')
   const [workMode, setWorkMode] = useState<string>(() =>
     readEnumParam(searchParams, 'workMode', WORK_MODES, ''),
@@ -103,6 +107,9 @@ export function OffersPage() {
 
   const [scanStatus, setScanStatus] = useState<ScanStatusDto | null>(null)
   const [scanning, setScanning] = useState(false)
+  // The user ran a scan that includes a login-required source (LinkedIn) → show the login-window hint
+  // (feature 008, US3). Client-driven, set only on a user-triggered scan (not a resumed scheduled one).
+  const [awaitingLogin, setAwaitingLogin] = useState(false)
   const [scanError, setScanError] = useState<string | null>(null)
   const [lastScan, setLastScan] = useState<ScanRunSummaryDto | null>(null)
   const [enrichmentRefresh, setEnrichmentRefresh] = useState(0)
@@ -303,6 +310,8 @@ export function OffersPage() {
   }, [])
 
   async function handleRunScan() {
+    // A scan collects all enabled sources; if any needs login, surface the login-window hint (feature 008).
+    setAwaitingLogin(sources.some((s) => s.requiresLogin && s.enabled))
     setScanning(true)
     setScanError(null)
     setScanStatus(null)
@@ -313,6 +322,7 @@ export function OffersPage() {
       setScanError(e instanceof ApiError ? e.message : 'Scan failed to start.')
     } finally {
       setScanning(false)
+      setAwaitingLogin(false)
     }
   }
 
@@ -566,7 +576,12 @@ export function OffersPage() {
         </div>
       </div>
 
-      <ScanBanner scanning={scanning} status={scanStatus} error={scanError} />
+      <ScanBanner
+        scanning={scanning}
+        status={scanStatus}
+        error={scanError}
+        awaitingLogin={awaitingLogin}
+      />
 
       <EnrichmentIndicator
         refreshKey={enrichmentRefresh}

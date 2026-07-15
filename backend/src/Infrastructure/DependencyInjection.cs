@@ -20,8 +20,8 @@ using JobOfferMatcher.Infrastructure.Persistence;
 using JobOfferMatcher.Infrastructure.Persistence.Repositories;
 using JobOfferMatcher.Infrastructure.Scheduling;
 using JobOfferMatcher.Infrastructure.Sources;
-using JobOfferMatcher.Infrastructure.Sources.Browser;
 using JobOfferMatcher.Infrastructure.Sources.JustJoinIt;
+using JobOfferMatcher.Infrastructure.Sources.LinkedIn;
 using JobOfferMatcher.Infrastructure.Sources.NoFluffJobs;
 using JobOfferMatcher.Infrastructure.Sources.TheProtocol;
 using Ganss.Xss;
@@ -127,9 +127,36 @@ public static class DependencyInjection
 
         services.AddScoped<IJobSourceFactory, JobSourceFactory>();
 
-        // Deferred manual-login path (port wired; Playwright adapter not built — FR-040).
-        services.AddSingleton<IInteractiveBrowserSession, NotConfiguredInteractiveBrowserSession>();
+        // LinkedIn (feature 008): the first real InteractiveBrowser source. Config-gated Playwright-vs-
+        // NotConfigured client (mirrors TheProtocol's UseBrowser swap), registered as BOTH ILinkedInClient
+        // and IInteractiveBrowserSession (the port's first activation — FR-040).
+        services.Configure<LinkedInOptions>(configuration.GetSection(LinkedInOptions.SectionName));
+        AddLinkedInClient(services, configuration);
 
         return services;
+    }
+
+    /// <summary>
+    /// Register the <see cref="ILinkedInClient"/> (feature 008), also exposed as the
+    /// <see cref="IInteractiveBrowserSession"/> port (its first activation — FR-040). Config-gated on
+    /// <c>Sources:LinkedIn:UseBrowser</c> exactly like TheProtocol: <c>true</c> → the headed, persistent
+    /// <c>PlaywrightLinkedInClient</c> (a singleton — the browser is launched lazily and reused across
+    /// single-flight scans); <c>false</c> → the <see cref="NotConfiguredLinkedInClient"/> fallback
+    /// (offline/CI/no-Chromium).
+    /// </summary>
+    private static void AddLinkedInClient(IServiceCollection services, IConfiguration configuration)
+    {
+        if (configuration.GetValue($"{LinkedInOptions.SectionName}:UseBrowser", true))
+        {
+            services.AddSingleton<PlaywrightLinkedInClient>();
+            services.AddSingleton<ILinkedInClient>(sp => sp.GetRequiredService<PlaywrightLinkedInClient>());
+            services.AddSingleton<IInteractiveBrowserSession>(sp => sp.GetRequiredService<PlaywrightLinkedInClient>());
+        }
+        else
+        {
+            services.AddSingleton<NotConfiguredLinkedInClient>();
+            services.AddSingleton<ILinkedInClient>(sp => sp.GetRequiredService<NotConfiguredLinkedInClient>());
+            services.AddSingleton<IInteractiveBrowserSession>(sp => sp.GetRequiredService<NotConfiguredLinkedInClient>());
+        }
     }
 }
