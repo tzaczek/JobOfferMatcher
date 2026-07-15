@@ -23,8 +23,12 @@ Stack: **React** (Vite, TypeScript) front end + **.NET 10** (ASP.NET Core) back 
 - **Node.js 20+** and **npm** (to build / dev-run the SPA)
 - **Docker Desktop** (runs the local PostgreSQL container, and the integration tests via
   Testcontainers). A native PostgreSQL 17 install is the Docker-free fallback.
-- One-time, only when the deferred manual-login browser path is eventually built:
-  `playwright install chromium`.
+- One-time, to collect the **LinkedIn** source (feature 008 — the manual-login browser path):
+  `playwright install chromium`. A LinkedIn scan opens a **headed** Chromium window; you sign in
+  yourself (the password is never stored, transmitted, or logged). The session persists under
+  `{LocalApplicationData}/JobOfferMatcher/browser-profiles/linkedin` (gitignored) and is reused across
+  scans; it lives **outside** `cv-data/`, so it is deliberately **excluded from backups** — re-log-in
+  after a restore. Set `Sources:LinkedIn:UseBrowser=false` to run without it (offline/CI).
 
 ---
 

@@ -15,6 +15,6 @@ public sealed class NotConfiguredInteractiveBrowserSession : IInteractiveBrowser
         "InteractiveBrowserNotConfigured",
         "Manual-login browser collection is not configured. The Playwright adapter is deferred (FR-040).");
 
-    public Task<Result<SessionReady>> EnsureLoggedInAsync(SourceId source, CancellationToken ct) =>
+    public Task<Result<SessionReady>> EnsureLoggedInAsync(SourceId source, bool interactive, CancellationToken ct) =>
         Task.FromResult(Result<SessionReady>.Failure(NotConfigured));
 }

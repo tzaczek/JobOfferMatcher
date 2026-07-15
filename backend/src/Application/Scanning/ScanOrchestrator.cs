@@ -27,6 +27,7 @@ public sealed class ScanOrchestrator(
     IUnitOfWork unitOfWork,
     ScanConcurrencyGuard concurrency,
     MaintenanceGate maintenance,
+    ScanContext scanContext,
     TimeProvider time,
     ILogger<ScanOrchestrator> logger) : IScanRunner
 {
@@ -71,6 +72,10 @@ public sealed class ScanOrchestrator(
 
         await scanRuns.AddAsync(run, ct);
         await unitOfWork.SaveChangesAsync(ct);
+
+        // Publish the scan's identity + attended-ness to the scoped context so a login-gated adapter
+        // (LinkedIn, feature 008) knows whether it may launch an interactive login window (ADR-3).
+        scanContext.Begin(run.Id, request.Trigger);
 
         var tally = new Tally();
         var worstOutcome = ScanOutcome.Complete;

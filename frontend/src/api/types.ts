@@ -174,11 +174,7 @@ export interface ApplicationInput {
 }
 
 export type ScanState =
-  | 'running'
-  | 'waiting_for_login'
-  | 'challenge_detected'
-  | 'completed'
-  | 'incomplete'
+  'running' | 'waiting_for_login' | 'challenge_detected' | 'completed' | 'incomplete'
 
 export type ScanOutcome = 'complete' | 'partial' | 'failed' | null
 
@@ -252,6 +248,19 @@ export interface SearchCriteriaDto {
   sortBy: string | null
   orderBy: string | null
   workplaceKeep: string[]
+  /** LinkedIn source (feature 008): collect the personalized Recommended feed. */
+  includeRecommended?: boolean
+  /** LinkedIn source (feature 008): saved keyword searches, each an independent pass. */
+  linkedInSearches?: LinkedInSearchDto[]
+}
+
+/** One LinkedIn saved keyword search (feature 008, US2). */
+export interface LinkedInSearchDto {
+  keywords: string
+  location?: string | null
+  geoId?: string | null
+  distance?: number | null
+  recency?: string | null
 }
 
 export interface CvDto {

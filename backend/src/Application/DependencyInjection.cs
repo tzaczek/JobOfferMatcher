@@ -22,6 +22,9 @@ public static class DependencyInjection
         services.AddSingleton<ScanConcurrencyGuard>();
         // Backup/restore vs. writers coordination (003 ADR-3) — process-wide singleton beside the guard.
         services.AddSingleton<MaintenanceGate>();
+        // Per-scan attended-ness carrier (008 ADR-3): scoped like IScanRunner, so it's isolated per scan
+        // and read by the login-gated LinkedIn adapter resolved from the same scope.
+        services.AddScoped<ScanContext>();
         services.AddScoped<RoleGroupingService>();
         services.AddScoped<IScanRunner, ScanOrchestrator>();
         services.AddScoped<SetUserOfferStatus>();

@@ -32,6 +32,29 @@
   gap: var(--sp-2);
 }
 
+/* LinkedIn collection editor (feature 008). All values reference design tokens (Principle VIII). */
+.sources-form__linkedin {
+  border: 1px solid var(--c-paper-200);
+  border-radius: var(--radius-md);
+  padding: var(--sp-4);
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+.sources-form__linkedin-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--sp-3);
+}
+.sources-form__search {
+  padding: var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
 .sources-list {
   list-style: none;
   margin: 0;
